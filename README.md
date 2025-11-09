@@ -23,6 +23,34 @@ A simple web-based service for generating 10-20 second videos using Open-Sora 2.
 - 40GB+ VRAM for optimal performance
 - PyTorch >= 2.4.0
 
+## Quick Start Options
+
+### Option 1: Lambda Labs GPU Cloud (Recommended) ⚡
+
+**Fastest way to get started!**
+
+Lambda Labs provides affordable GPU instances ($1-2/hour) with pre-configured CUDA environment.
+
+```bash
+# 1. Launch instance at https://cloud.lambdalabs.com
+# 2. SSH into instance
+ssh ubuntu@<instance-ip>
+
+# 3. Run automated setup
+git clone <your-repo-url> ~/sora2
+cd ~/sora2
+./lambda_setup.sh
+
+# 4. Start service
+./lambda_run.sh
+```
+
+**Complete guide**: See [LAMBDA_LABS.md](LAMBDA_LABS.md) and [LAMBDA_QUICKSTART.md](LAMBDA_QUICKSTART.md)
+
+### Option 2: Local Installation
+
+For local GPU servers or other cloud providers.
+
 ## Installation
 
 ### 1. Clone Open-Sora Repository
@@ -126,6 +154,12 @@ ENABLE_QUEUE = True
 - **256px**: ~60 seconds on single H100/H800
 - **768px**: ~276 seconds with 8 GPUs
 - Use `--offload True` for memory optimization on GPUs with <40GB VRAM
+
+## Deployment Options
+
+- **Lambda Labs** (Recommended): See [LAMBDA_LABS.md](LAMBDA_LABS.md) - Quick 5-minute setup
+- **Docker**: See [DEPLOYMENT.md](DEPLOYMENT.md#option-3-docker-deployment)
+- **Production**: See [DEPLOYMENT.md](DEPLOYMENT.md) for systemd, nginx, SSL setup
 
 ## Troubleshooting
 
