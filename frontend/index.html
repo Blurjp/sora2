@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open-Sora Video Generator</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎬 Open-Sora Video Generator</h1>
+            <p class="subtitle">Generate high-quality 10-20 second videos from images and text</p>
+        </header>
+
+        <main>
+            <div class="card">
+                <form id="videoForm">
+                    <!-- Image Upload -->
+                    <div class="form-group">
+                        <label for="imageInput">
+                            <strong>Input Image</strong>
+                            <span class="required">*</span>
+                        </label>
+                        <div class="upload-area" id="uploadArea">
+                            <input type="file" id="imageInput" accept="image/png,image/jpeg,image/jpg,image/webp" required>
+                            <div class="upload-placeholder">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                                    <polyline points="21 15 16 10 5 21"/>
+                                </svg>
+                                <p>Click to upload or drag and drop</p>
+                                <p class="hint">PNG, JPG, WEBP (max 10MB)</p>
+                            </div>
+                            <div class="preview-container" id="previewContainer" style="display: none;">
+                                <img id="imagePreview" src="" alt="Preview">
+                                <button type="button" class="remove-btn" id="removeImage">&times;</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Text Prompt -->
+                    <div class="form-group">
+                        <label for="promptInput">
+                            <strong>Text Prompt</strong>
+                            <span class="required">*</span>
+                        </label>
+                        <textarea
+                            id="promptInput"
+                            rows="4"
+                            placeholder="Describe the video you want to generate... (e.g., 'a serene sunset over calm ocean waves, birds flying in the distance')"
+                            maxlength="1000"
+                            required
+                        ></textarea>
+                        <div class="char-count">
+                            <span id="charCount">0</span>/1000
+                        </div>
+                    </div>
+
+                    <!-- Video Settings -->
+                    <div class="settings-grid">
+                        <div class="form-group">
+                            <label for="durationInput">
+                                <strong>Duration (seconds)</strong>
+                            </label>
+                            <input
+                                type="number"
+                                id="durationInput"
+                                min="10"
+                                max="20"
+                                value="15"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="aspectRatioInput">
+                                <strong>Aspect Ratio</strong>
+                            </label>
+                            <select id="aspectRatioInput">
+                                <option value="16:9">16:9 (Landscape)</option>
+                                <option value="9:16">9:16 (Portrait)</option>
+                                <option value="1:1">1:1 (Square)</option>
+                                <option value="2.39:1">2.39:1 (Cinematic)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="motionScoreInput">
+                                <strong>Motion Intensity</strong>
+                            </label>
+                            <input
+                                type="range"
+                                id="motionScoreInput"
+                                min="0"
+                                max="1"
+                                step="0.1"
+                                value="0.5"
+                            >
+                            <div class="range-value">
+                                <span id="motionScoreValue">0.5</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="seedInput">
+                                <strong>Seed (optional)</strong>
+                            </label>
+                            <input
+                                type="number"
+                                id="seedInput"
+                                placeholder="Random"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Advanced Options -->
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="refinePromptInput">
+                            <span>Refine prompt with AI</span>
+                        </label>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn-primary" id="generateBtn">
+                        <span class="btn-text">Generate Video</span>
+                        <span class="btn-loader" style="display: none;">
+                            <svg class="spinner" viewBox="0 0 50 50">
+                                <circle cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+                            </svg>
+                            Generating...
+                        </span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Progress Section -->
+            <div class="card" id="progressCard" style="display: none;">
+                <h2>Generation Progress</h2>
+                <div class="progress-info">
+                    <div class="status-badge" id="statusBadge">Processing</div>
+                    <p id="statusMessage">Your video is being generated...</p>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <p class="progress-text" id="progressText">0%</p>
+            </div>
+
+            <!-- Result Section -->
+            <div class="card" id="resultCard" style="display: none;">
+                <h2>Generated Video</h2>
+                <div class="video-container">
+                    <video id="resultVideo" controls>
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+                <div class="result-actions">
+                    <a id="downloadBtn" class="btn-primary" download>
+                        Download Video
+                    </a>
+                    <button type="button" class="btn-secondary" id="newVideoBtn">
+                        Generate Another Video
+                    </button>
+                </div>
+            </div>
+
+            <!-- Error Section -->
+            <div class="card error-card" id="errorCard" style="display: none;">
+                <h2>Error</h2>
+                <p id="errorMessage"></p>
+                <button type="button" class="btn-secondary" id="retryBtn">
+                    Try Again
+                </button>
+            </div>
+        </main>
+
+        <footer>
+            <p>Powered by <a href="https://github.com/hpcaitech/Open-Sora" target="_blank">Open-Sora 2.0</a></p>
+            <p class="disclaimer">No content restrictions. High-quality video generation.</p>
+        </footer>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>

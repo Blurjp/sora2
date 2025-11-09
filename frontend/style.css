@@ -1,0 +1,405 @@
+/* Global Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+    color: #333;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Header */
+header {
+    text-align: center;
+    color: white;
+    margin-bottom: 30px;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.subtitle {
+    font-size: 1.1rem;
+    opacity: 0.95;
+}
+
+/* Card */
+.card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.card h2 {
+    margin-bottom: 20px;
+    color: #667eea;
+}
+
+/* Form */
+.form-group {
+    margin-bottom: 24px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #444;
+}
+
+.required {
+    color: #e74c3c;
+}
+
+/* Upload Area */
+.upload-area {
+    position: relative;
+    border: 2px dashed #cbd5e0;
+    border-radius: 12px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.upload-area:hover {
+    border-color: #667eea;
+    background: #f7fafc;
+}
+
+.upload-area input[type="file"] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.upload-placeholder svg {
+    color: #a0aec0;
+    margin-bottom: 16px;
+}
+
+.upload-placeholder p {
+    color: #4a5568;
+    margin-bottom: 4px;
+}
+
+.hint {
+    font-size: 0.875rem;
+    color: #a0aec0;
+}
+
+.preview-container {
+    position: relative;
+    max-width: 100%;
+}
+
+.preview-container img {
+    max-width: 100%;
+    max-height: 400px;
+    border-radius: 8px;
+    object-fit: contain;
+}
+
+.remove-btn {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s;
+}
+
+.remove-btn:hover {
+    transform: scale(1.1);
+}
+
+/* Input Fields */
+textarea,
+input[type="text"],
+input[type="number"],
+select {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+    transition: border-color 0.3s;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+textarea:focus,
+input:focus,
+select:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.char-count {
+    text-align: right;
+    font-size: 0.875rem;
+    color: #a0aec0;
+    margin-top: 4px;
+}
+
+/* Settings Grid */
+.settings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 20px;
+}
+
+/* Range Input */
+input[type="range"] {
+    width: 100%;
+    margin-bottom: 4px;
+}
+
+.range-value {
+    text-align: center;
+    font-weight: 600;
+    color: #667eea;
+}
+
+/* Checkbox */
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+/* Buttons */
+.btn-primary,
+.btn-secondary {
+    padding: 14px 32px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    width: 100%;
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.btn-secondary:hover {
+    background: #cbd5e0;
+}
+
+.btn-loader {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* Spinner */
+.spinner {
+    animation: rotate 2s linear infinite;
+    width: 20px;
+    height: 20px;
+}
+
+.spinner circle {
+    stroke: currentColor;
+    stroke-linecap: round;
+    animation: dash 1.5s ease-in-out infinite;
+}
+
+@keyframes rotate {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes dash {
+    0% {
+        stroke-dasharray: 1, 150;
+        stroke-dashoffset: 0;
+    }
+    50% {
+        stroke-dasharray: 90, 150;
+        stroke-dashoffset: -35;
+    }
+    100% {
+        stroke-dasharray: 90, 150;
+        stroke-dashoffset: -124;
+    }
+}
+
+/* Progress */
+.progress-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    background: #667eea;
+    color: white;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transition: width 0.5s ease;
+    width: 0%;
+}
+
+.progress-text {
+    text-align: center;
+    font-weight: 600;
+    color: #667eea;
+}
+
+/* Video */
+.video-container {
+    margin-bottom: 20px;
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.video-container video {
+    width: 100%;
+    display: block;
+}
+
+.result-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.result-actions .btn-primary,
+.result-actions .btn-secondary {
+    flex: 1;
+}
+
+/* Error */
+.error-card {
+    border-left: 4px solid #e74c3c;
+}
+
+.error-card h2 {
+    color: #e74c3c;
+}
+
+#errorMessage {
+    margin-bottom: 20px;
+    padding: 16px;
+    background: #fee;
+    border-radius: 8px;
+    color: #c33;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    color: white;
+    margin-top: 30px;
+    opacity: 0.9;
+}
+
+footer a {
+    color: white;
+    text-decoration: underline;
+}
+
+.disclaimer {
+    font-size: 0.875rem;
+    margin-top: 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    header h1 {
+        font-size: 2rem;
+    }
+
+    .card {
+        padding: 20px;
+    }
+
+    .settings-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .result-actions {
+        flex-direction: column;
+    }
+}
