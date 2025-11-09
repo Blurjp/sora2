@@ -21,10 +21,10 @@ OPENSORA_PATH="$LAMBDA_HOME/Open-Sora"
 PROJECT_PATH="$LAMBDA_HOME/sora2"
 
 echo -e "${BLUE}"
-echo "╔════════════════════════════════════════════════════════════╗"
-echo "║   Open-Sora Video Generator - Lambda Labs Setup           ║"
-echo "║   Automated installation for Lambda Labs GPU instances     ║"
-echo "╚════════════════════════════════════════════════════════════╝"
+echo "================================================================"
+echo "   Open-Sora Video Generator - Lambda Labs Setup"
+echo "   Automated installation for Lambda Labs GPU instances"
+echo "================================================================"
 echo -e "${NC}"
 echo ""
 
@@ -35,17 +35,17 @@ print_section() {
 
 # Function to print success messages
 print_success() {
-    echo -e "${GREEN}✓ $1${NC}"
+    echo -e "${GREEN}[OK] $1${NC}"
 }
 
 # Function to print warnings
 print_warning() {
-    echo -e "${YELLOW}⚠ $1${NC}"
+    echo -e "${YELLOW}[WARNING] $1${NC}"
 }
 
 # Function to print errors
 print_error() {
-    echo -e "${RED}✗ $1${NC}"
+    echo -e "${RED}[ERROR] $1${NC}"
 }
 
 # Check if running on Lambda Labs
@@ -68,14 +68,18 @@ print_section "Checking GPU"
 if command -v nvidia-smi &> /dev/null; then
     GPU_COUNT=$(nvidia-smi --list-gpus | wc -l)
     GPU_NAME=$(nvidia-smi --query-gpu=name --format=csv,noheader | head -n1)
-    GPU_MEMORY=$(nvidia-smi --query-gpu=memory.total --format=csv,noheader | head -n1)
+    GPU_MEMORY_RAW=$(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits | head -n1)
 
     print_success "GPU detected: $GPU_NAME"
     print_success "GPU count: $GPU_COUNT"
-    print_success "GPU memory: $GPU_MEMORY"
+    print_success "GPU memory: ${GPU_MEMORY_RAW} MiB"
+
+    # Convert MiB to GB (divide by 1024)
+    MEMORY_GB=$(echo "scale=0; $GPU_MEMORY_RAW / 1024" | bc)
+
+    print_success "GPU memory: ${MEMORY_GB} GB"
 
     # Check if suitable for Open-Sora
-    MEMORY_GB=$(echo $GPU_MEMORY | grep -oP '\d+' | head -n1)
     if [ "$MEMORY_GB" -lt 40 ]; then
         print_error "GPU has less than 40GB memory. Open-Sora requires at least 40GB."
         print_warning "Generation may fail or be very slow."
@@ -111,8 +115,11 @@ sudo apt install -y \
     curl \
     tmux \
     htop \
-    nvtop \
+    bc \
     > /dev/null 2>&1
+
+# Try to install nvtop (may not be available on all systems)
+sudo apt install -y nvtop > /dev/null 2>&1 || print_warning "nvtop not available"
 
 print_success "System dependencies installed"
 
@@ -213,40 +220,31 @@ if ! grep -q "OPENSORA_PATH" ~/.bashrc; then
     print_success "OPENSORA_PATH added to ~/.bashrc"
 fi
 
+# Store GPU count
+if ! grep -q "GPU_COUNT" ~/.bashrc; then
+    echo "export GPU_COUNT=$GPU_COUNT" >> ~/.bashrc
+fi
+
 # Update config.py
 print_section "Configuring Service"
 
 sed -i "s|OPENSORA_PATH = os.environ.get(\"OPENSORA_PATH\", \".*\")|OPENSORA_PATH = os.environ.get(\"OPENSORA_PATH\", \"$OPENSORA_PATH\")|" backend/config.py
 print_success "Configuration updated"
 
-# Optimize for Lambda Labs
-if [ "$GPU_COUNT" -gt 1 ]; then
-    print_section "Optimizing for Multi-GPU Setup"
-    sed -i "s/\"--nproc_per_node\", \"1\"/\"--nproc_per_node\", \"$GPU_COUNT\"/" backend/generator.py
-    print_success "Configured for $GPU_COUNT GPUs"
-fi
-
-# Set resolution based on GPU memory
+# Set resolution based on GPU memory (using properly converted GB value)
 if [ "$MEMORY_GB" -ge 80 ]; then
     sed -i 's/MODEL_RESOLUTION = "256px"/MODEL_RESOLUTION = "768px"/' backend/config.py
     print_success "Configured for high-quality 768px generation (80GB+ VRAM)"
 elif [ "$MEMORY_GB" -ge 40 ]; then
-    print_success "Configured for standard 256px generation (40GB VRAM)"
+    # Keep default 256px
+    print_success "Configured for standard 256px generation (40-79GB VRAM)"
 else
-    print_warning "GPU has limited memory. Generation may be slow or fail."
+    print_warning "GPU has limited memory ($MEMORY_GB GB). Generation may be slow or fail."
 fi
 
 # Create directories
 mkdir -p outputs temp
 print_success "Output directories created"
-
-# Use fast instance storage if available
-if [ -d "/tmp" ] && [ "$(df /tmp | tail -1 | awk '{print $4}')" -gt 10000000 ]; then
-    mkdir -p /tmp/sora_outputs /tmp/sora_temp
-    ln -sf /tmp/sora_outputs outputs_fast
-    ln -sf /tmp/sora_temp temp_fast
-    print_success "Fast instance storage configured"
-fi
 
 # Test installation
 print_section "Testing Installation"
@@ -263,16 +261,16 @@ fi
 # Setup complete
 echo ""
 echo -e "${GREEN}"
-echo "╔════════════════════════════════════════════════════════════╗"
-echo "║                 Setup Complete! 🚀                         ║"
-echo "╚════════════════════════════════════════════════════════════╝"
+echo "================================================================"
+echo "                 Setup Complete!"
+echo "================================================================"
 echo -e "${NC}"
 echo ""
 echo -e "${BLUE}Installation Summary:${NC}"
-echo "  • GPU: $GPU_NAME ($GPU_COUNT x $GPU_MEMORY)"
-echo "  • Python: $PYTHON_VERSION"
-echo "  • Open-Sora: $OPENSORA_PATH"
-echo "  • Project: $PROJECT_PATH"
+echo "  GPU: $GPU_NAME ($GPU_COUNT x ${MEMORY_GB}GB)"
+echo "  Python: $PYTHON_VERSION"
+echo "  Open-Sora: $OPENSORA_PATH"
+echo "  Project: $PROJECT_PATH"
 echo ""
 echo -e "${BLUE}Next Steps:${NC}"
 echo ""
@@ -283,23 +281,14 @@ echo "2. Access via SSH tunnel (from your local machine):"
 echo -e "   ${YELLOW}ssh -L 8000:localhost:8000 ubuntu@<instance-ip>${NC}"
 echo -e "   Then open: ${YELLOW}http://localhost:8000${NC}"
 echo ""
-echo "3. Or access directly (less secure):"
-echo -e "   ${YELLOW}http://<instance-ip>:8000${NC}"
-echo ""
-echo "4. Run in background with tmux:"
+echo "3. Run in background with tmux:"
 echo -e "   ${YELLOW}tmux new -s sora${NC}"
 echo -e "   ${YELLOW}./lambda_run.sh${NC}"
 echo -e "   Press Ctrl+B, then D to detach"
 echo ""
 echo -e "${BLUE}Useful Commands:${NC}"
-echo "  • Monitor GPU: ${YELLOW}watch -n 1 nvidia-smi${NC}"
-echo "  • View logs: ${YELLOW}tail -f sora.log${NC}"
-echo "  • Check health: ${YELLOW}curl http://localhost:8000/health${NC}"
-echo ""
-echo -e "${BLUE}Documentation:${NC}"
-echo "  • Lambda Labs guide: ${YELLOW}cat LAMBDA_LABS.md${NC}"
-echo "  • Quick start: ${YELLOW}cat QUICKSTART.md${NC}"
-echo "  • API docs: ${YELLOW}http://localhost:8000/docs${NC}"
+echo "  Monitor GPU: ${YELLOW}watch -n 1 nvidia-smi${NC}"
+echo "  Check health: ${YELLOW}curl http://localhost:8000/health${NC}"
 echo ""
 print_success "Ready to generate videos!"
 echo ""

@@ -72,6 +72,10 @@ class VideoGenerator:
             num_frames = self.calculate_frames(duration)
             logger.info(f"Generating {num_frames} frames for {duration}s video")
 
+            # Create unique output directory for this job to avoid file conflicts
+            job_output_dir = OUTPUT_DIR / video_id
+            job_output_dir.mkdir(exist_ok=True)
+
             # Prepare output path
             output_path = OUTPUT_DIR / f"{video_id}.mp4"
 
@@ -88,7 +92,7 @@ class VideoGenerator:
                 "--num_frames", str(num_frames),
                 "--aspect_ratio", aspect_ratio,
                 "--motion-score", str(motion_score),
-                "--save_dir", str(OUTPUT_DIR),
+                "--save_dir", str(job_output_dir),
                 "--offload", "True",  # Memory optimization
             ]
 
@@ -110,12 +114,12 @@ class VideoGenerator:
             logger.debug(f"Command: {' '.join(cmd)}")
 
             # Run generation in subprocess
+            # Use all available GPUs (don't restrict to GPU 0)
             process = await asyncio.create_subprocess_exec(
                 *cmd,
                 cwd=str(self.opensora_path),
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-                env={**os.environ, "CUDA_VISIBLE_DEVICES": "0"}
+                stderr=asyncio.subprocess.PIPE
             )
 
             # Stream output
@@ -131,9 +135,8 @@ class VideoGenerator:
                     "error": error_msg
                 }
 
-            # Find generated video file
-            # Open-Sora may generate files with different naming
-            generated_files = list(OUTPUT_DIR.glob("*.mp4"))
+            # Find generated video file in job-specific directory
+            generated_files = list(job_output_dir.glob("*.mp4"))
             if not generated_files:
                 logger.error("No video file generated")
                 self.jobs[video_id]["status"] = "failed"
@@ -142,12 +145,17 @@ class VideoGenerator:
                     "error": "No video file generated"
                 }
 
-            # Get the most recent file
-            latest_file = max(generated_files, key=lambda p: p.stat().st_mtime)
+            # Get the generated file (should only be one in this directory)
+            generated_file = generated_files[0]
 
-            # Rename to video_id if needed
-            if latest_file != output_path:
-                latest_file.rename(output_path)
+            # Move to final output location
+            generated_file.rename(output_path)
+
+            # Clean up job directory
+            try:
+                job_output_dir.rmdir()
+            except:
+                pass  # Directory not empty or other issue, ignore
 
             # Update job status
             duration_taken = time.time() - self.jobs[video_id]["start_time"]
