@@ -213,6 +213,10 @@ echo "Downgrading numpy to 1.x for compatibility..."
 pip install "numpy<2" > /tmp/numpy_install.log 2>&1
 print_success "numpy downgraded to 1.x"
 
+echo "Installing tensornvme for checkpoint loading..."
+pip install tensornvme > /tmp/tensornvme_install.log 2>&1
+print_success "tensornvme installed"
+
 # Setup service
 print_section "Setting up Video Generation Service"
 
