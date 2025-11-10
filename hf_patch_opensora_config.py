@@ -41,8 +41,14 @@ def patch_file(path: Path, checkpoint: str) -> bool:
     text = re.sub(r"checkpoint[_-]?path\s*=\s*['\"]\./ckpts/[^'\"]+['\"]",
                   f'checkpoint_path="{checkpoint}"', text, flags=re.IGNORECASE)
 
-    # Pattern 3: Old incorrect checkpoint paths (without /model.safetensors)
-    # Replace hpcai-tech/OpenSora-STDiT-v3 with hpcai-tech/OpenSora-STDiT-v3/model.safetensors
+    # Pattern 3: from_pretrained with old incorrect checkpoint paths
+    # Replace from_pretrained="hpcai-tech/OpenSora-STDiT-v3" with full path
+    text = re.sub(r'from_pretrained\s*=\s*["\']hpcai-tech/OpenSora-STDiT-v3["\']',
+                  f'from_pretrained="{checkpoint}"', text)
+    text = re.sub(r'from_pretrained\s*=\s*["\']hpcai-tech/Open-Sora-v2["\']',
+                  f'from_pretrained="{checkpoint}"', text)
+
+    # Pattern 4: Old ckpt= paths (without /model.safetensors)
     text = re.sub(r"ckpt\s*=\s*['\"]hpcai-tech/OpenSora-STDiT-v3['\"]",
                   f'ckpt="{checkpoint}"', text)
     text = re.sub(r"ckpt\s*=\s*['\"]hpcai-tech/Open-Sora-v2['\"]",
@@ -50,15 +56,17 @@ def patch_file(path: Path, checkpoint: str) -> bool:
 
     if text != orig:
         path.write_text(text)
-        print(f"[OK] {path.name}: patched to {checkpoint}")
+        changes = len([1 for i, j in zip(orig.split('\n'), text.split('\n')) if i != j])
+        print(f"[OK] {path.name}: patched {changes} lines with {checkpoint}")
         return True
     else:
         # Show what's actually in the file for debugging
         print(f"[WARN] {path.name}: no patterns matched")
-        ckpt_lines = [line for line in text.split('\n') if 'ckpt' in line.lower()]
-        if ckpt_lines:
-            print(f"  Current ckpt lines:")
-            for line in ckpt_lines[:5]:  # Show first 5 matches
+        relevant_lines = [line for line in text.split('\n')
+                         if 'ckpt' in line.lower() or 'from_pretrained' in line.lower()]
+        if relevant_lines:
+            print(f"  Current checkpoint-related lines:")
+            for line in relevant_lines[:10]:  # Show first 10 matches
                 print(f"    {line.strip()}")
         return False
 
