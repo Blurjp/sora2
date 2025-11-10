@@ -21,6 +21,7 @@ from .models import (
     AspectRatio,
 )
 from .generator import generator
+from .remote_generator import remote_generator
 from .config import (
     HOST,
     PORT,
@@ -32,6 +33,8 @@ from .config import (
     CLEANUP_AFTER_HOURS,
     MIN_DURATION,
     MAX_DURATION,
+    USE_REMOTE_GPU,
+    GPU_SERVICE_URL,
 )
 
 # Configure logging
@@ -62,10 +65,22 @@ if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
+# Select generator based on configuration
+active_generator = remote_generator if USE_REMOTE_GPU else generator
+
 @app.on_event("startup")
 async def startup_event():
     """Initialize service on startup"""
     logger.info("Starting Open-Sora Video Generation Service")
+    logger.info(f"Mode: {'Remote GPU' if USE_REMOTE_GPU else 'Local GPU'}")
+    if USE_REMOTE_GPU:
+        logger.info(f"GPU Service URL: {GPU_SERVICE_URL}")
+        # Check GPU service health
+        health = await remote_generator.health_check()
+        if health.get("status") == "healthy":
+            logger.info("GPU service is healthy and ready")
+        else:
+            logger.warning(f"GPU service health check failed: {health}")
     logger.info(f"Output directory: {OUTPUT_DIR}")
     logger.info(f"Temp directory: {TEMP_DIR}")
 
@@ -74,6 +89,8 @@ async def startup_event():
 async def shutdown_event():
     """Cleanup on shutdown"""
     logger.info("Shutting down service")
+    if USE_REMOTE_GPU:
+        await remote_generator.cleanup()
 
 
 @app.get("/")
@@ -115,7 +132,7 @@ async def generate_video(
     """
     try:
         # Check if a generation is already in progress
-        if generator.is_processing():
+        if active_generator.is_processing():
             raise HTTPException(
                 status_code=429,
                 detail="A video generation is already in progress. Please wait for it to complete."
@@ -157,7 +174,7 @@ async def generate_video(
         logger.info(f"Prompt: {prompt[:100]}...")
 
         # Start generation (returns False only if someone else snuck in)
-        started = generator.start_generation(
+        started = active_generator.start_generation(
             video_id=video_id,
             image_path=str(image_path),
             prompt=prompt,
@@ -194,7 +211,7 @@ async def get_status(video_id: str):
 
     - **video_id**: The unique video identifier returned from /api/generate
     """
-    job = generator.get_job_status(video_id)
+    job = active_generator.get_job_status(video_id)
 
     if not job:
         raise HTTPException(status_code=404, detail="Video not found")

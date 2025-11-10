@@ -25,11 +25,32 @@ A simple web-based service for generating 10-20 second videos using Open-Sora 2.
 
 ## Quick Start Options
 
-### Option 1: Lambda Labs GPU Cloud (Recommended) ⚡
+### Option 1: Remote GPU (Recommended) ⚡⚡⚡
 
-**Fastest way to get started!**
+**NEW: Run frontend & backend locally, use remote GPU for generation!**
 
-Lambda Labs provides affordable GPU instances ($1-2/hour) with pre-configured CUDA environment.
+This is the most cost-effective and flexible setup:
+- ✅ No local GPU required
+- ✅ Pay for GPU only when generating
+- ✅ Works on Windows, Mac, Linux
+- ✅ Quick 5-minute setup
+
+```bash
+# On Lambda GPU instance
+./lambda_run_gpu_service.sh --api-key your-secret-key
+
+# On your local machine
+./run_local.sh --gpu-url http://lambda-ip:8001 --api-key your-secret-key
+
+# Open browser
+http://localhost:8000
+```
+
+**Complete guide**: See [QUICKSTART_REMOTE.md](QUICKSTART_REMOTE.md) and [REMOTE_GPU_SETUP.md](REMOTE_GPU_SETUP.md)
+
+### Option 2: All-in-One Lambda Instance
+
+Run everything (frontend + backend + GPU) on a single Lambda instance.
 
 ```bash
 # 1. Launch instance at https://cloud.lambdalabs.com
@@ -45,9 +66,9 @@ cd ~/sora2
 ./lambda_run.sh
 ```
 
-**Complete guide**: See [LAMBDA_LABS.md](LAMBDA_LABS.md) and [LAMBDA_QUICKSTART.md](LAMBDA_QUICKSTART.md)
+**Complete guide**: See [LAMBDA_LABS.md](LAMBDA_LABS.md)
 
-### Option 2: Local Installation
+### Option 3: Local Installation
 
 For local GPU servers or other cloud providers.
 

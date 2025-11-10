@@ -51,3 +51,14 @@ ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
 # Cleanup settings
 CLEANUP_AFTER_HOURS = 24  # Delete generated videos after 24 hours
+
+# Remote GPU Configuration
+# Set USE_REMOTE_GPU to True to use remote GPU service instead of local
+USE_REMOTE_GPU = os.environ.get("USE_REMOTE_GPU", "true").lower() == "true"
+
+# GPU service endpoint (when USE_REMOTE_GPU is True)
+# Example: "http://your-lambda-instance:8001" or "http://192.168.1.100:8001"
+GPU_SERVICE_URL = os.environ.get("GPU_SERVICE_URL", "http://localhost:8001")
+
+# Optional API key for GPU service authentication
+GPU_API_KEY = os.environ.get("GPU_API_KEY", None)
