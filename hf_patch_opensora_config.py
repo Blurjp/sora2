@@ -42,16 +42,16 @@ def patch_file(path: Path, checkpoint: str) -> bool:
                   f'checkpoint_path="{checkpoint}"', text, flags=re.IGNORECASE)
 
     # Pattern 3: from_pretrained with old incorrect checkpoint paths
-    # Replace from_pretrained="hpcai-tech/OpenSora-STDiT-v3" with full path
-    text = re.sub(r'from_pretrained\s*=\s*["\']hpcai-tech/OpenSora-STDiT-v3["\']',
+    # Replace any old checkpoint paths with the correct one
+    text = re.sub(r'from_pretrained\s*=\s*["\']hpcai-tech/OpenSora-STDiT-v3[^"\']*["\']',
                   f'from_pretrained="{checkpoint}"', text)
-    text = re.sub(r'from_pretrained\s*=\s*["\']hpcai-tech/Open-Sora-v2["\']',
+    text = re.sub(r'from_pretrained\s*=\s*["\']hpcai-tech/Open-Sora-v2[^"\']*["\']',
                   f'from_pretrained="{checkpoint}"', text)
 
-    # Pattern 4: Old ckpt= paths (without /model.safetensors)
-    text = re.sub(r"ckpt\s*=\s*['\"]hpcai-tech/OpenSora-STDiT-v3['\"]",
+    # Pattern 4: Old ckpt= paths
+    text = re.sub(r"ckpt\s*=\s*['\"]hpcai-tech/OpenSora-STDiT-v3[^'\"]*['\"]",
                   f'ckpt="{checkpoint}"', text)
-    text = re.sub(r"ckpt\s*=\s*['\"]hpcai-tech/Open-Sora-v2['\"]",
+    text = re.sub(r"ckpt\s*=\s*['\"]hpcai-tech/Open-Sora-v2[^'\"]*['\"]",
                   f'ckpt="{checkpoint}"', text)
 
     if text != orig:
@@ -78,7 +78,7 @@ def main() -> None:
 
     checkpoint = os.environ.get(
         "CHECKPOINT_PATH",
-        "hpcai-tech/OpenSora-STDiT-v3/model.safetensors",
+        "hpcai-tech/Open-Sora-v2/Open_Sora_v2.safetensors",
     )
     print(f"Config dir: {cfg_dir}")
     print(f"Checkpoint: {checkpoint}")
