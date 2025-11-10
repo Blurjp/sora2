@@ -7,7 +7,27 @@ This fixes the hardcoded './ckpts/Open_Sora_v2.safetensors' path.
 import os
 import sys
 import re
+import site
 from pathlib import Path
+
+def find_opensora_configs():
+    """Find Open-Sora config directory in site-packages."""
+    # Check all site-packages locations
+    site_packages = site.getsitepackages() + [site.getusersitepackages()]
+
+    for sp in site_packages:
+        config_dir = Path(sp) / "opensora" / "configs" / "diffusion" / "inference"
+        if config_dir.exists():
+            return config_dir
+
+    # Also check OPENSORA_PATH if set
+    opensora_path = os.environ.get('OPENSORA_PATH')
+    if opensora_path:
+        config_dir = Path(opensora_path) / "configs" / "diffusion" / "inference"
+        if config_dir.exists():
+            return config_dir
+
+    return None
 
 def patch_config_file(config_path: Path, checkpoint_repo: str = "hpcai-tech/OpenSora-STDiT-v3") -> bool:
     """Patch the config file to use HF Hub checkpoint."""
@@ -26,6 +46,8 @@ def patch_config_file(config_path: Path, checkpoint_repo: str = "hpcai-tech/Open
         print("✓ Config already patched")
         return True
 
+    original_content = content
+
     # Find and replace checkpoint path patterns
     # Pattern 1: ckpt="./ckpts/..." or ckpt='./ckpts/...'
     pattern1 = r'ckpt\s*=\s*["\']\.\/ckpts\/[^"\']+["\']'
@@ -39,36 +61,37 @@ def patch_config_file(config_path: Path, checkpoint_repo: str = "hpcai-tech/Open
         content = re.sub(pattern2, f'checkpoint_path="{checkpoint_repo}"', content, flags=re.IGNORECASE)
         print("✓ Replaced checkpoint_path in config")
 
-    # Write back
-    with open(config_path, 'w') as f:
-        f.write(content)
-
-    print("✓ Config patched successfully")
-    return True
+    # Only write if content changed
+    if content != original_content:
+        with open(config_path, 'w') as f:
+            f.write(content)
+        print("✓ Config file updated")
+        return True
+    else:
+        print("⚠ No matching patterns found to replace")
+        # Show first few lines for debugging
+        print("Config content preview:")
+        print("\n".join(content.split("\n")[:20]))
+        return False
 
 def main():
-    # Get OPENSORA_PATH from environment
-    opensora_path = os.environ.get('OPENSORA_PATH')
+    # Find config directory
+    config_dir = find_opensora_configs()
 
-    if not opensora_path:
-        print("ERROR: OPENSORA_PATH environment variable not set")
+    if not config_dir:
+        print("ERROR: Could not find Open-Sora config directory")
+        print("Checked site-packages and OPENSORA_PATH")
         sys.exit(1)
 
-    opensora_path = Path(opensora_path)
-
-    if not opensora_path.exists():
-        print(f"ERROR: Open-Sora path does not exist: {opensora_path}")
-        sys.exit(1)
+    print(f"Found Open-Sora configs at: {config_dir}")
 
     # Patch both 256px and 768px configs
     configs_to_patch = [
-        opensora_path / "configs/diffusion/inference/256px.py",
-        opensora_path / "configs/diffusion/inference/768px.py",
+        config_dir / "256px.py",
+        config_dir / "768px.py",
     ]
 
     checkpoint_repo = os.environ.get('CHECKPOINT_PATH', 'hpcai-tech/OpenSora-STDiT-v3')
-
-    print(f"Open-Sora path: {opensora_path}")
     print(f"Checkpoint repo: {checkpoint_repo}")
     print()
 

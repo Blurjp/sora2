@@ -132,17 +132,7 @@ fi
 
 # Check and patch Open-Sora config for Hugging Face checkpoint
 echo "Checking Open-Sora config..."
-if [ -n "$OPENSORA_PATH" ] && [ -f "$OPENSORA_PATH/configs/diffusion/inference/256px.py" ]; then
-    if ! grep -q "hpcai-tech/OpenSora-STDiT-v3" "$OPENSORA_PATH/configs/diffusion/inference/256px.py" 2>/dev/null; then
-        echo "Patching Open-Sora config for HF checkpoint..."
-        python3 "$(dirname "$0")/patch_opensora_config.py" > /dev/null 2>&1
-        if [ $? -eq 0 ]; then
-            echo "✓ Config patched successfully"
-        fi
-    else
-        echo "✓ Config already uses HF checkpoint"
-    fi
-fi
+python3 "$(dirname "$0")/patch_opensora_config.py" 2>&1 | grep -E "(✓|ERROR|Found)" || echo "Config check completed"
 
 echo "Dependencies OK"
 
