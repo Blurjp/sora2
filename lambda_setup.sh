@@ -223,17 +223,32 @@ pip install "numpy<2" > /tmp/numpy_install.log 2>&1
 print_success "numpy downgraded to 1.x"
 
 echo "Installing tensornvme for checkpoint loading..."
-# tensornvme needs torch available during build, use --no-build-isolation
-pip install --no-build-isolation tensornvme > /tmp/tensornvme_install.log 2>&1 || {
-    print_warning "tensornvme installation failed, trying alternative method..."
-    # Try with build isolation but after sourcing bashrc
-    source ~/.bashrc
-    pip install tensornvme > /tmp/tensornvme_install2.log 2>&1 || {
-        print_error "Could not install tensornvme. This may cause issues with checkpoint loading."
-        print_warning "You can try manually: pip install --no-build-isolation tensornvme"
-    }
-}
-print_success "tensornvme installation attempted"
+# First, uninstall any broken partial installation
+pip uninstall -y tensornvme > /dev/null 2>&1
+
+# Install build dependencies
+sudo apt install -y liburing-dev libaio-dev > /dev/null 2>&1
+
+# Export PYTHONPATH to ensure torch is visible during build
+export PYTHONPATH="$HOME/.local/lib/python3.10/site-packages:$PYTHONPATH"
+
+# Install with --no-build-isolation so it can see torch
+pip install --no-build-isolation tensornvme > /tmp/tensornvme_install.log 2>&1
+if [ $? -eq 0 ]; then
+    # Source bashrc if it was modified
+    source ~/.bashrc 2>/dev/null || true
+    # Verify installation
+    if python3 -c "from tensornvme.async_file_io import AsyncFileWriter" 2>/dev/null; then
+        print_success "tensornvme installed and verified"
+    else
+        print_warning "tensornvme installed but verification failed"
+        print_warning "Open-Sora may work without it or download it at runtime"
+    fi
+else
+    print_error "tensornvme installation failed"
+    tail -20 /tmp/tensornvme_install.log
+    print_warning "Continuing anyway - Open-Sora may work without it"
+fi
 
 # Setup service
 print_section "Setting up Video Generation Service"
