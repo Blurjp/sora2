@@ -32,18 +32,34 @@ def patch_file(path: Path, checkpoint: str) -> bool:
         print(f"[OK] {path.name}: already uses {checkpoint}")
         return True
     orig = text
-    # ckpt = './ckpts/xxx.safetensors'
+
+    # Pattern 1: ckpt = './ckpts/xxx.safetensors'
     text = re.sub(r"ckpt\s*=\s*['\"]\./ckpts/[^'\"]+['\"]",
                   f'ckpt="{checkpoint}"', text)
-    # checkpoint_path = './ckpts/xxx.safetensors'
+
+    # Pattern 2: checkpoint_path = './ckpts/xxx.safetensors'
     text = re.sub(r"checkpoint[_-]?path\s*=\s*['\"]\./ckpts/[^'\"]+['\"]",
                   f'checkpoint_path="{checkpoint}"', text, flags=re.IGNORECASE)
+
+    # Pattern 3: Old incorrect checkpoint paths (without /model.safetensors)
+    # Replace hpcai-tech/OpenSora-STDiT-v3 with hpcai-tech/OpenSora-STDiT-v3/model.safetensors
+    text = re.sub(r"ckpt\s*=\s*['\"]hpcai-tech/OpenSora-STDiT-v3['\"]",
+                  f'ckpt="{checkpoint}"', text)
+    text = re.sub(r"ckpt\s*=\s*['\"]hpcai-tech/Open-Sora-v2['\"]",
+                  f'ckpt="{checkpoint}"', text)
+
     if text != orig:
         path.write_text(text)
         print(f"[OK] {path.name}: patched to {checkpoint}")
         return True
     else:
-        print(f"[WARN] {path.name}: no './ckpts/...' reference found")
+        # Show what's actually in the file for debugging
+        print(f"[WARN] {path.name}: no patterns matched")
+        ckpt_lines = [line for line in text.split('\n') if 'ckpt' in line.lower()]
+        if ckpt_lines:
+            print(f"  Current ckpt lines:")
+            for line in ckpt_lines[:5]:  # Show first 5 matches
+                print(f"    {line.strip()}")
         return False
 
 def main() -> None:
