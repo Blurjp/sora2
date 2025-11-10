@@ -199,16 +199,19 @@ if [ "$SKIP_OPENSORA" != "true" ]; then
     pip install flash-attn --no-build-isolation > /tmp/flash_attn_install.log 2>&1
     print_success "flash-attn installed"
 
-    echo "Upgrading rich library (fixing compatibility)..."
-    pip install --upgrade rich > /tmp/rich_install.log 2>&1
-    print_success "rich library upgraded"
-
-    echo "Downgrading numpy to 1.x (fixing compatibility)..."
-    pip install "numpy<2" > /tmp/numpy_install.log 2>&1
-    print_success "numpy downgraded to 1.x"
-
     print_success "Open-Sora installation complete"
 fi
+
+# Fix compatibility issues (always run, even if Open-Sora was already installed)
+print_section "Fixing Python Library Compatibility"
+
+echo "Upgrading rich library..."
+pip install --upgrade rich > /tmp/rich_install.log 2>&1
+print_success "rich library upgraded"
+
+echo "Downgrading numpy to 1.x for compatibility..."
+pip install "numpy<2" > /tmp/numpy_install.log 2>&1
+print_success "numpy downgraded to 1.x"
 
 # Setup service
 print_section "Setting up Video Generation Service"
