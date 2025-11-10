@@ -62,5 +62,5 @@ set USE_REMOTE_GPU=true
 set HOST=127.0.0.1
 set PORT=8000
 
-REM Run the backend
-python backend\main.py
+REM Run the backend as a module
+python -m backend.main

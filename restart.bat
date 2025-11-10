@@ -137,7 +137,7 @@ if "%MODE%"=="local" (
     set PORT=%LOCAL_PORT%
     if not "%GPU_API_KEY%"=="" set GPU_API_KEY=%GPU_API_KEY%
 
-    python backend\main.py
+    python -m backend.main
 
 ) else if "%MODE%"=="gpu_service" (
     echo GPU service mode is not supported on Windows
