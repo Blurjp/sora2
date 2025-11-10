@@ -87,5 +87,8 @@ if [ -n "$API_KEY" ]; then
     export GPU_API_KEY="$API_KEY"
 fi
 
+# Reduce CUDA memory fragmentation and large-split issues
+export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True,max_split_size_mb:128}"
+
 # Run the GPU service
 python3 -m gpu_service.main

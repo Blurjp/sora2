@@ -9,6 +9,7 @@ import logging
 from pathlib import Path
 from typing import Optional, Dict
 import time
+import re
 
 from .config import (
     OPENSORA_PATH,
@@ -28,6 +29,11 @@ class VideoGenerator:
         self.opensora_path = Path(OPENSORA_PATH)
         self._generation_lock = asyncio.Lock()
         self._current_task: Optional[asyncio.Task] = None
+        # Set conservative CUDA allocator defaults to reduce fragmentation
+        os.environ.setdefault(
+            "PYTORCH_CUDA_ALLOC_CONF",
+            "expandable_segments:True,max_split_size_mb:128",
+        )
 
     def calculate_frames(self, duration_seconds: int) -> int:
         """
@@ -45,6 +51,77 @@ class VideoGenerator:
         """Return True while a torchrun task is still running."""
         task = self._current_task
         return task is not None and not task.done()
+
+    def _patch_opensora_memory(self, config_filename: str) -> None:
+        """Best-effort patch: enable temporal tiling in the VAE to lower VRAM.
+
+        Modifies the Open-Sora inference config in-place on the GPU host.
+        Safe to call multiple times; idempotent changes only.
+        """
+        cfg_path = self.opensora_path / config_filename
+        try:
+            text = cfg_path.read_text()
+        except Exception:
+            return
+
+        original = text
+
+        # Ensure ae dict has use_temporal_tiling=True
+        # 1) If an explicit False is present, flip to True
+        text = re.sub(
+            r"(use_temporal_tiling\s*:\s*)False",
+            r"\1True",
+            text,
+        )
+
+        # 2) If key missing inside ae dict, insert it next to use_spatial_tiling
+        def _inject_temporal_tiling(match: re.Match) -> str:
+            body = match.group(1)
+            if re.search(r"use_temporal_tiling\s*:\s*", body):
+                return match.group(0)  # already present
+            # try to place after use_spatial_tiling if present
+            body2 = re.sub(
+                r"(use_spatial_tiling\s*:\s*True\s*,?)",
+                r"\1\n        'use_temporal_tiling': True,",
+                body,
+                count=1,
+            )
+            if body2 == body:
+                # otherwise append near the start
+                body2 = re.sub(
+                    r"^",
+                    "'use_temporal_tiling': True,\n        ",
+                    body,
+                    count=1,
+                )
+            return f"ae = dict(\n    {body2}\n)"
+
+        text = re.sub(
+            r"ae\s*=\s*dict\s*\(\n\s*(.*?)\n\s*\)",
+            _inject_temporal_tiling,
+            text,
+            flags=re.DOTALL,
+        )
+
+        if text != original:
+            try:
+                cfg_path.write_text(text)
+            except Exception:
+                pass
+
+    async def _run_generation(self, cmd: list, extra_env: Optional[Dict[str, str]] = None) -> subprocess.CompletedProcess:
+        env = os.environ.copy()
+        if extra_env:
+            env.update(extra_env)
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
+            cwd=str(self.opensora_path),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            env=env,
+        )
+        stdout, stderr = await process.communicate()
+        return subprocess.CompletedProcess(cmd, process.returncode, stdout, stderr)
 
     async def generate_video(
         self,
@@ -87,6 +164,9 @@ class VideoGenerator:
                 # Prepare output path
                 output_path = OUTPUT_DIR / f"{video_id}.mp4"
 
+                # Opportunistically patch the Open-Sora config to reduce VRAM
+                self._patch_opensora_memory(MODEL_CONFIG_PATH)
+
                 # Build command
                 cmd = [
                     "torchrun",
@@ -116,24 +196,39 @@ class VideoGenerator:
 
                 start_time = time.time()
 
-                # Run generation in subprocess
-                process = await asyncio.create_subprocess_exec(
-                    *cmd,
-                    cwd=str(self.opensora_path),
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE
-                )
+                # Run generation
+                result = await self._run_generation(cmd)
 
-                # Stream output
-                stdout, stderr = await process.communicate()
+                if result.returncode != 0:
+                    err_text = (result.stderr or b"").decode(errors="ignore")
+                    # Retry strategy on CUDA OOM: reduce frames and tighten allocator split
+                    if "CUDA out of memory" in err_text or "torch.OutOfMemoryError" in err_text:
+                        logger.warning("CUDA OOM detected. Retrying with fewer frames and allocator tweaks...")
+                        # reduce frames to ~75% while preserving 4k+1 pattern
+                        reduced = max(int(num_frames * 0.75), 49)
+                        k = (reduced - 1) // 4
+                        reduced_frames = 4 * k + 1
 
-                if process.returncode != 0:
-                    error_msg = stderr.decode() if stderr else "Unknown error"
-                    logger.error(f"Generation failed: {error_msg}")
-                    return {
-                        "success": False,
-                        "error": error_msg
-                    }
+                        # Rebuild command with fewer frames
+                        retry_cmd = list(cmd)
+                        if "--num_frames" in retry_cmd:
+                            idx = retry_cmd.index("--num_frames")
+                            retry_cmd[idx + 1] = str(reduced_frames)
+
+                        retry_env = {"PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True,max_split_size_mb:64"}
+                        retry = await self._run_generation(retry_cmd, extra_env=retry_env)
+                        if retry.returncode == 0:
+                            # Replace outputs to final location as below
+                            stdout = retry.stdout
+                            stderr = retry.stderr
+                        else:
+                            error_msg = (retry.stderr or b"").decode(errors="ignore") or err_text or "Unknown error"
+                            logger.error(f"Generation failed after retry: {error_msg}")
+                            return {"success": False, "error": error_msg}
+                    else:
+                        error_msg = err_text or "Unknown error"
+                        logger.error(f"Generation failed: {error_msg}")
+                        return {"success": False, "error": error_msg}
 
                 # Find generated video file in job-specific directory
                 generated_files = list(job_output_dir.glob("*.mp4"))
