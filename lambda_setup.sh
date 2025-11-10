@@ -205,6 +205,15 @@ fi
 # Fix compatibility issues (always run, even if Open-Sora was already installed)
 print_section "Fixing Python Library Compatibility"
 
+echo "Ensuring PyTorch is installed for tensornvme build..."
+if ! python3 -c "import torch" 2>/dev/null; then
+    echo "Installing PyTorch..."
+    pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121 > /tmp/torch_install_compat.log 2>&1
+    print_success "PyTorch installed"
+else
+    print_success "PyTorch already available"
+fi
+
 echo "Upgrading rich library..."
 pip install --upgrade rich > /tmp/rich_install.log 2>&1
 print_success "rich library upgraded"
@@ -214,8 +223,17 @@ pip install "numpy<2" > /tmp/numpy_install.log 2>&1
 print_success "numpy downgraded to 1.x"
 
 echo "Installing tensornvme for checkpoint loading..."
-pip install tensornvme > /tmp/tensornvme_install.log 2>&1
-print_success "tensornvme installed"
+# tensornvme needs torch available during build, use --no-build-isolation
+pip install --no-build-isolation tensornvme > /tmp/tensornvme_install.log 2>&1 || {
+    print_warning "tensornvme installation failed, trying alternative method..."
+    # Try with build isolation but after sourcing bashrc
+    source ~/.bashrc
+    pip install tensornvme > /tmp/tensornvme_install2.log 2>&1 || {
+        print_error "Could not install tensornvme. This may cause issues with checkpoint loading."
+        print_warning "You can try manually: pip install --no-build-isolation tensornvme"
+    }
+}
+print_success "tensornvme installation attempted"
 
 # Setup service
 print_section "Setting up Video Generation Service"
