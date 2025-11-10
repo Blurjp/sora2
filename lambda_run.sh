@@ -84,6 +84,32 @@ echo ""
 # Start the service
 cd "$(dirname "$0")"
 
+# Pre-flight dependency check
+echo "Checking dependencies..."
+
+# Check numpy version
+NUMPY_VERSION=$(python3 -c "import numpy; print(numpy.__version__)" 2>/dev/null)
+if [[ ! $NUMPY_VERSION == 1.* ]]; then
+    echo "Fixing NumPy version..."
+    pip install "numpy<2" > /dev/null 2>&1
+fi
+
+# Check rich
+if ! python3 -c "from rich.progress import MofNCompleteColumn" 2>/dev/null; then
+    echo "Fixing rich library..."
+    pip install --upgrade rich > /dev/null 2>&1
+fi
+
+# Check tensornvme
+if ! python3 -c "from tensornvme.async_file_io import AsyncFileWriter" 2>/dev/null; then
+    echo "Warning: tensornvme not found. Installing..."
+    sudo apt install -y liburing-dev libaio-dev > /dev/null 2>&1
+    export PYTHONPATH="$HOME/.local/lib/python3.10/site-packages:$PYTHONPATH"
+    pip install --no-build-isolation tensornvme > /dev/null 2>&1 || echo "Warning: tensornvme install failed, continuing anyway"
+fi
+
+echo "Dependencies OK"
+
 # Set host binding based on public access mode
 if [ "$PUBLIC_ACCESS" = true ]; then
     export HOST="0.0.0.0"

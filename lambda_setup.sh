@@ -314,6 +314,37 @@ else
     print_error "Python environment test failed"
 fi
 
+echo "Verifying critical dependencies..."
+DEPS_OK=true
+
+# Check numpy version
+NUMPY_VERSION=$(python3 -c "import numpy; print(numpy.__version__)" 2>/dev/null)
+if [[ $NUMPY_VERSION == 1.* ]]; then
+    print_success "NumPy version correct: $NUMPY_VERSION"
+else
+    print_error "NumPy version wrong: $NUMPY_VERSION (should be 1.x)"
+    DEPS_OK=false
+fi
+
+# Check rich
+if python3 -c "from rich.progress import MofNCompleteColumn" 2>/dev/null; then
+    print_success "rich library verified"
+else
+    print_error "rich library missing or outdated"
+    DEPS_OK=false
+fi
+
+# Check tensornvme
+if python3 -c "from tensornvme.async_file_io import AsyncFileWriter" 2>/dev/null; then
+    print_success "tensornvme verified"
+else
+    print_warning "tensornvme not working (may still work without it)"
+fi
+
+if [ "$DEPS_OK" = false ]; then
+    print_error "Some dependencies have issues. Try running ./lambda_setup.sh again."
+fi
+
 # Setup complete
 echo ""
 echo -e "${GREEN}"
