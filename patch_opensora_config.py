@@ -42,7 +42,7 @@ def find_opensora_configs():
 
     return None
 
-def patch_config_file(config_path: Path, checkpoint_repo: str = "hpcai-tech/OpenSora-STDiT-v3") -> bool:
+def patch_config_file(config_path: Path, checkpoint_repo: str = "hpcai-tech/Open-Sora-v2") -> bool:
     """Patch the config file to use HF Hub checkpoint."""
 
     if not config_path.exists():
