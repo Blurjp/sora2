@@ -62,6 +62,13 @@ else
     fi
 fi
 
+# Install bc early (needed for GPU memory calculation)
+print_section "Installing Basic Dependencies"
+
+sudo apt update > /dev/null 2>&1
+sudo apt install -y bc > /dev/null 2>&1
+print_success "Basic dependencies installed"
+
 # Check GPU
 print_section "Checking GPU"
 
