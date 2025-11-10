@@ -131,8 +131,7 @@ if ! python3 -c "from tensornvme.async_file_io import AsyncFileWriter" 2>/dev/nu
 fi
 
 # Check and patch Open-Sora config for Hugging Face checkpoint
-echo "Checking Open-Sora config..."
-python3 "$(dirname "$0")/patch_opensora_config.py" 2>&1 | grep -E "(✓|ERROR|Found)" || echo "Config check completed"
+python3 "$(dirname "$0")/hf_patch_opensora_config.py"
 
 echo "Dependencies OK"
 
