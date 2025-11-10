@@ -27,6 +27,11 @@ FRAMES_PER_SECOND = 8
 MODEL_RESOLUTION = "256px"  # or "768px" for higher quality
 MODEL_CONFIG_PATH = f"configs/diffusion/inference/{MODEL_RESOLUTION}.py"
 
+# Checkpoint configuration
+# Use Hugging Face Hub path for automatic download
+# Must include full path: org/repo/filename.safetensors
+CHECKPOINT_PATH = os.environ.get("CHECKPOINT_PATH", "hpcai-tech/Open-Sora-v2/Open_Sora_v2.safetensors")
+
 # Cleanup settings
 CLEANUP_AFTER_HOURS = 24  # Delete generated videos after 24 hours
 
