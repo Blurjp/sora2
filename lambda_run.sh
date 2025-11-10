@@ -92,4 +92,5 @@ else
     export HOST="127.0.0.1"
 fi
 
-python3 backend/main.py
+# Run as a module to support relative imports
+python3 -m backend.main
