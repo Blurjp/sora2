@@ -16,6 +16,7 @@ from .config import (
     TEMP_DIR,
     FRAMES_PER_SECOND,
     MODEL_CONFIG_PATH,
+    CHECKPOINT_PATH,
 )
 
 logger = logging.getLogger(__name__)
@@ -132,6 +133,7 @@ class VideoGenerator:
                     "--standalone",
                     "scripts/diffusion/inference.py",
                     MODEL_CONFIG_PATH,
+                    "--ckpt", CHECKPOINT_PATH,  # Hugging Face Hub checkpoint
                     "--cond_type", "i2v_head",
                     "--ref", str(image_path),
                     "--prompt", prompt,

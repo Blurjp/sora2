@@ -41,6 +41,11 @@ ASPECT_RATIOS = ["16:9", "9:16", "1:1", "2.39:1"]
 MODEL_RESOLUTION = "256px"  # or "768px" for higher quality
 MODEL_CONFIG_PATH = f"configs/diffusion/inference/{MODEL_RESOLUTION}.py"
 
+# Checkpoint configuration
+# Use Hugging Face Hub path for automatic download
+# Format: "hf://repo_id/filename" or just "repo_id" for default checkpoint
+CHECKPOINT_PATH = os.environ.get("CHECKPOINT_PATH", "hpcai-tech/OpenSora-STDiT-v3")
+
 # Generation limits
 MAX_CONCURRENT_JOBS = 2
 ENABLE_QUEUE = True
