@@ -345,6 +345,20 @@ if [ "$DEPS_OK" = false ]; then
     print_error "Some dependencies have issues. Try running ./lambda_setup.sh again."
 fi
 
+# Final verification: can Open-Sora actually import?
+echo ""
+echo "Running final Open-Sora import test..."
+if python3 -c "import sys; sys.path.insert(0, '$OPENSORA_PATH'); from opensora.datasets.dataloader import prepare_dataloader; from opensora.utils.ckpt import load_checkpoint" 2>/dev/null; then
+    print_success "Open-Sora imports successful!"
+else
+    print_error "Open-Sora import test FAILED. Checking what's wrong..."
+    python3 -c "import sys; sys.path.insert(0, '$OPENSORA_PATH'); from opensora.datasets.dataloader import prepare_dataloader; from opensora.utils.ckpt import load_checkpoint" 2>&1 | tail -20
+    print_error ""
+    print_error "Setup completed but Open-Sora may not work correctly."
+    print_error "Try running: pip install --no-build-isolation tensornvme"
+    exit 1
+fi
+
 # Setup complete
 echo ""
 echo -e "${GREEN}"
