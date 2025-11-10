@@ -74,8 +74,9 @@ if command -v nvidia-smi &> /dev/null; then
     print_success "GPU count: $GPU_COUNT"
     print_success "GPU memory: ${GPU_MEMORY_RAW} MiB"
 
-    # Convert MiB to GB (divide by 1024)
-    MEMORY_GB=$(echo "scale=0; $GPU_MEMORY_RAW / 1024" | bc)
+    # Convert MiB to GB (divide by 1024 with proper rounding)
+    # Add 512 MiB before dividing to round up properly (40536 MiB -> 40 GB)
+    MEMORY_GB=$(echo "scale=0; ($GPU_MEMORY_RAW + 512) / 1024" | bc)
 
     print_success "GPU memory: ${MEMORY_GB} GB"
 

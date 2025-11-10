@@ -19,8 +19,10 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 TEMP_DIR.mkdir(exist_ok=True)
 
 # Server configuration
-HOST = "0.0.0.0"
-PORT = 8000
+# Default to 127.0.0.1 for security (SSH tunnel mode)
+# Set HOST env var to "0.0.0.0" for public access
+HOST = os.environ.get("HOST", "127.0.0.1")
+PORT = int(os.environ.get("PORT", "8000"))
 
 # Video generation settings
 DEFAULT_ASPECT_RATIO = "16:9"

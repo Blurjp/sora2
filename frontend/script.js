@@ -145,10 +145,12 @@ videoForm.addEventListener('submit', async (e) => {
         // Start polling for status
         startStatusPolling();
 
+        // Don't re-enable button here - keep it disabled until generation completes
+        // The button will be re-enabled in checkStatus() when status is completed or failed
+
     } catch (error) {
         showError(error.message);
-    } finally {
-        // Reset button state
+        // Only re-enable button on error (not on successful submission)
         generateBtn.disabled = false;
         btnText.style.display = 'block';
         btnLoader.style.display = 'none';
@@ -183,9 +185,17 @@ async function checkStatus() {
         if (data.status === 'completed') {
             stopStatusPolling();
             showResult(data.video_url);
+            // Re-enable the generate button
+            generateBtn.disabled = false;
+            btnText.style.display = 'block';
+            btnLoader.style.display = 'none';
         } else if (data.status === 'failed') {
             stopStatusPolling();
             showError(data.error || 'Video generation failed');
+            // Re-enable the generate button
+            generateBtn.disabled = false;
+            btnText.style.display = 'block';
+            btnLoader.style.display = 'none';
         } else {
             // Update progress (simulated since Open-Sora doesn't provide real progress)
             const progress = data.progress || Math.min(90, Date.now() % 90);
@@ -194,6 +204,11 @@ async function checkStatus() {
 
     } catch (error) {
         console.error('Status check error:', error);
+        stopStatusPolling();
+        showError('Lost connection while checking progress. Please try again.');
+        generateBtn.disabled = false;
+        btnText.style.display = 'block';
+        btnLoader.style.display = 'none';
     }
 }
 

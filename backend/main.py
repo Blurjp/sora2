@@ -114,6 +114,13 @@ async def generate_video(
     - **refine_prompt**: Use AI to enhance the prompt (optional)
     """
     try:
+        # Check if a generation is already in progress
+        if generator.is_processing():
+            raise HTTPException(
+                status_code=429,
+                detail="A video generation is already in progress. Please wait for it to complete."
+            )
+
         # Validate image file
         file_ext = Path(image.filename).suffix.lower()
         if file_ext not in ALLOWED_IMAGE_EXTENSIONS:
@@ -149,19 +156,23 @@ async def generate_video(
         logger.info(f"Received generation request: {video_id}")
         logger.info(f"Prompt: {prompt[:100]}...")
 
-        # Start generation in background
-        asyncio.create_task(
-            generator.generate_video(
-                video_id=video_id,
-                image_path=str(image_path),
-                prompt=prompt,
-                duration=duration,
-                aspect_ratio=aspect_ratio,
-                motion_score=motion_score,
-                seed=seed,
-                refine_prompt=refine_prompt
-            )
+        # Start generation (returns False only if someone else snuck in)
+        started = generator.start_generation(
+            video_id=video_id,
+            image_path=str(image_path),
+            prompt=prompt,
+            duration=duration,
+            aspect_ratio=aspect_ratio,
+            motion_score=motion_score,
+            seed=seed,
+            refine_prompt=refine_prompt,
         )
+
+        if not started:
+            raise HTTPException(
+                status_code=429,
+                detail="A video generation is already in progress. Please wait for it to complete."
+            )
 
         return GenerateResponse(
             video_id=video_id,

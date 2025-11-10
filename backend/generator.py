@@ -27,6 +27,8 @@ class VideoGenerator:
     def __init__(self):
         self.opensora_path = Path(OPENSORA_PATH)
         self.jobs: Dict[str, Dict] = {}
+        self._generation_lock = asyncio.Lock()
+        self._current_task: Optional[asyncio.Task] = None
 
     def calculate_frames(self, duration_seconds: int) -> int:
         """
@@ -39,6 +41,48 @@ class VideoGenerator:
         frames = 4 * k + 1
         # Ensure within limits
         return min(frames, 125)  # Max 125 (4*31+1)
+
+    def is_processing(self) -> bool:
+        """Return True while a torchrun task is still running."""
+        task = self._current_task
+        return task is not None and not task.done()
+
+    def start_generation(
+        self,
+        *,
+        video_id: str,
+        image_path: str,
+        prompt: str,
+        duration: int,
+        aspect_ratio: str,
+        motion_score: float,
+        seed: Optional[int],
+        refine_prompt: bool
+    ) -> bool:
+        """
+        Launch generation exactly once. Returns False if a job is already running.
+        """
+        if self.is_processing():
+            return False
+
+        self._current_task = asyncio.create_task(
+            self.generate_video(
+                video_id=video_id,
+                image_path=image_path,
+                prompt=prompt,
+                duration=duration,
+                aspect_ratio=aspect_ratio,
+                motion_score=motion_score,
+                seed=seed,
+                refine_prompt=refine_prompt,
+            )
+        )
+
+        def _clear_task(_: asyncio.Task):
+            self._current_task = None
+
+        self._current_task.add_done_callback(_clear_task)
+        return True
 
     async def generate_video(
         self,
@@ -67,121 +111,123 @@ class VideoGenerator:
         Returns:
             Dictionary with generation results
         """
-        try:
-            # Calculate frames
-            num_frames = self.calculate_frames(duration)
-            logger.info(f"Generating {num_frames} frames for {duration}s video")
-
-            # Create unique output directory for this job to avoid file conflicts
-            job_output_dir = OUTPUT_DIR / video_id
-            job_output_dir.mkdir(exist_ok=True)
-
-            # Prepare output path
-            output_path = OUTPUT_DIR / f"{video_id}.mp4"
-
-            # Build command
-            cmd = [
-                "torchrun",
-                "--nproc_per_node", "1",
-                "--standalone",
-                "scripts/diffusion/inference.py",
-                MODEL_CONFIG_PATH,
-                "--cond_type", "i2v_head",
-                "--ref", str(image_path),
-                "--prompt", prompt,
-                "--num_frames", str(num_frames),
-                "--aspect_ratio", aspect_ratio,
-                "--motion-score", str(motion_score),
-                "--save_dir", str(job_output_dir),
-                "--offload", "True",  # Memory optimization
-            ]
-
-            # Add optional parameters
-            if seed is not None:
-                cmd.extend(["--seed", str(seed)])
-
-            if refine_prompt:
-                cmd.append("--refine-prompt")
-
-            # Update job status
-            self.jobs[video_id] = {
-                "status": "processing",
-                "start_time": time.time(),
-                "progress": 0,
-            }
-
-            logger.info(f"Starting video generation: {video_id}")
-            logger.debug(f"Command: {' '.join(cmd)}")
-
-            # Run generation in subprocess
-            # Use all available GPUs (don't restrict to GPU 0)
-            process = await asyncio.create_subprocess_exec(
-                *cmd,
-                cwd=str(self.opensora_path),
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
-
-            # Stream output
-            stdout, stderr = await process.communicate()
-
-            if process.returncode != 0:
-                error_msg = stderr.decode() if stderr else "Unknown error"
-                logger.error(f"Generation failed: {error_msg}")
-                self.jobs[video_id]["status"] = "failed"
-                self.jobs[video_id]["error"] = error_msg
-                return {
-                    "success": False,
-                    "error": error_msg
-                }
-
-            # Find generated video file in job-specific directory
-            generated_files = list(job_output_dir.glob("*.mp4"))
-            if not generated_files:
-                logger.error("No video file generated")
-                self.jobs[video_id]["status"] = "failed"
-                return {
-                    "success": False,
-                    "error": "No video file generated"
-                }
-
-            # Get the generated file (should only be one in this directory)
-            generated_file = generated_files[0]
-
-            # Move to final output location
-            generated_file.rename(output_path)
-
-            # Clean up job directory
+        # Acquire lock to prevent concurrent generations
+        async with self._generation_lock:
             try:
-                job_output_dir.rmdir()
-            except:
-                pass  # Directory not empty or other issue, ignore
+                # Calculate frames
+                num_frames = self.calculate_frames(duration)
+                logger.info(f"Generating {num_frames} frames for {duration}s video")
 
-            # Update job status
-            duration_taken = time.time() - self.jobs[video_id]["start_time"]
-            self.jobs[video_id].update({
-                "status": "completed",
-                "progress": 100,
-                "output_path": str(output_path),
-                "duration": duration_taken,
-            })
+                # Create unique output directory for this job to avoid file conflicts
+                job_output_dir = OUTPUT_DIR / video_id
+                job_output_dir.mkdir(exist_ok=True)
 
-            logger.info(f"Video generated successfully: {video_id} ({duration_taken:.1f}s)")
+                # Prepare output path
+                output_path = OUTPUT_DIR / f"{video_id}.mp4"
 
-            return {
-                "success": True,
-                "video_path": str(output_path),
-                "duration": duration_taken,
-            }
+                # Build command
+                cmd = [
+                    "torchrun",
+                    "--nproc_per_node", "1",
+                    "--standalone",
+                    "scripts/diffusion/inference.py",
+                    MODEL_CONFIG_PATH,
+                    "--cond_type", "i2v_head",
+                    "--ref", str(image_path),
+                    "--prompt", prompt,
+                    "--num_frames", str(num_frames),
+                    "--aspect_ratio", aspect_ratio,
+                    "--motion-score", str(motion_score),
+                    "--save_dir", str(job_output_dir),
+                    "--offload", "True",  # Memory optimization
+                ]
 
-        except Exception as e:
-            logger.error(f"Error generating video: {e}", exc_info=True)
-            self.jobs[video_id]["status"] = "failed"
-            self.jobs[video_id]["error"] = str(e)
-            return {
-                "success": False,
-                "error": str(e)
-            }
+                # Add optional parameters
+                if seed is not None:
+                    cmd.extend(["--seed", str(seed)])
+
+                if refine_prompt:
+                    cmd.append("--refine-prompt")
+
+                # Update job status
+                self.jobs[video_id] = {
+                    "status": "processing",
+                    "start_time": time.time(),
+                    "progress": 0,
+                }
+
+                logger.info(f"Starting video generation: {video_id}")
+                logger.debug(f"Command: {' '.join(cmd)}")
+
+                # Run generation in subprocess
+                # Use all available GPUs (don't restrict to GPU 0)
+                process = await asyncio.create_subprocess_exec(
+                    *cmd,
+                    cwd=str(self.opensora_path),
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE
+                )
+
+                # Stream output
+                stdout, stderr = await process.communicate()
+
+                if process.returncode != 0:
+                    error_msg = stderr.decode() if stderr else "Unknown error"
+                    logger.error(f"Generation failed: {error_msg}")
+                    self.jobs[video_id]["status"] = "failed"
+                    self.jobs[video_id]["error"] = error_msg
+                    return {
+                        "success": False,
+                        "error": error_msg
+                    }
+
+                # Find generated video file in job-specific directory
+                generated_files = list(job_output_dir.glob("*.mp4"))
+                if not generated_files:
+                    logger.error("No video file generated")
+                    self.jobs[video_id]["status"] = "failed"
+                    return {
+                        "success": False,
+                        "error": "No video file generated"
+                    }
+
+                # Get the generated file (should only be one in this directory)
+                generated_file = generated_files[0]
+
+                # Move to final output location
+                generated_file.rename(output_path)
+
+                # Clean up job directory
+                try:
+                    job_output_dir.rmdir()
+                except:
+                    pass  # Directory not empty or other issue, ignore
+
+                # Update job status
+                duration_taken = time.time() - self.jobs[video_id]["start_time"]
+                self.jobs[video_id].update({
+                    "status": "completed",
+                    "progress": 100,
+                    "output_path": str(output_path),
+                    "duration": duration_taken,
+                })
+
+                logger.info(f"Video generated successfully: {video_id} ({duration_taken:.1f}s)")
+
+                return {
+                    "success": True,
+                    "video_path": str(output_path),
+                    "duration": duration_taken,
+                }
+
+            except Exception as e:
+                logger.error(f"Error generating video: {e}", exc_info=True)
+                self.jobs[video_id]["status"] = "failed"
+                self.jobs[video_id]["error"] = str(e)
+                return {
+                    "success": False,
+                    "error": str(e)
+                }
 
     def get_job_status(self, video_id: str) -> Optional[Dict]:
         """Get status of a generation job"""

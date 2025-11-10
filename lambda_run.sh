@@ -83,4 +83,13 @@ echo ""
 
 # Start the service
 cd "$(dirname "$0")"
+
+# Set host binding based on public access mode
+if [ "$PUBLIC_ACCESS" = true ]; then
+    export HOST="0.0.0.0"
+else
+    # Secure mode: only bind to localhost for SSH tunnel access
+    export HOST="127.0.0.1"
+fi
+
 python3 backend/main.py
