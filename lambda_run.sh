@@ -87,6 +87,17 @@ cd "$(dirname "$0")"
 # Pre-flight dependency check
 echo "Checking dependencies..."
 
+# Check service dependencies (fastapi, aiohttp, etc.)
+if ! python3 -c "import aiohttp, fastapi, uvicorn, aiofiles" 2>/dev/null; then
+    echo "Installing service dependencies..."
+    pip install -r requirements.txt > /dev/null 2>&1
+    if ! python3 -c "import aiohttp, fastapi, uvicorn, aiofiles" 2>/dev/null; then
+        echo "ERROR: Failed to install service dependencies"
+        echo "Please run: pip install -r requirements.txt"
+        exit 1
+    fi
+fi
+
 # Check numpy version
 NUMPY_VERSION=$(python3 -c "import numpy; print(numpy.__version__)" 2>/dev/null)
 if [[ ! $NUMPY_VERSION == 1.* ]]; then
