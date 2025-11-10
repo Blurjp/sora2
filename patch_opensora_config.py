@@ -47,31 +47,36 @@ def patch_config_file(config_path: Path, checkpoint_repo: str = "hpcai-tech/Open
         return True
 
     original_content = content
+    replacements_made = 0
 
-    # Find and replace checkpoint path patterns
-    # Pattern 1: ckpt="./ckpts/..." or ckpt='./ckpts/...'
-    pattern1 = r'ckpt\s*=\s*["\']\.\/ckpts\/[^"\']+["\']'
+    # Pattern 1: Quoted strings - ckpt="./ckpts/..." or ckpt='./ckpts/...'
+    pattern1 = r'(["\'])\.\/ckpts\/[^"\']+\1'
     if re.search(pattern1, content):
-        content = re.sub(pattern1, f'ckpt="{checkpoint_repo}"', content)
-        print("✓ Replaced ckpt path in config")
+        content = re.sub(pattern1, f'"{checkpoint_repo}"', content)
+        replacements_made += len(re.findall(pattern1, original_content))
+        print(f"✓ Replaced {len(re.findall(pattern1, original_content))} quoted ckpts paths")
 
-    # Pattern 2: checkpoint_path="./ckpts/..." or similar variables
-    pattern2 = r'checkpoint[_-]?path\s*=\s*["\']\.\/ckpts\/[^"\']+["\']'
-    if re.search(pattern2, content, re.IGNORECASE):
-        content = re.sub(pattern2, f'checkpoint_path="{checkpoint_repo}"', content, flags=re.IGNORECASE)
-        print("✓ Replaced checkpoint_path in config")
+    # Pattern 2: Any line with ./ckpts/ (more aggressive)
+    # This catches cases like: ckpt=./ckpts/file.safetensors without quotes
+    pattern2 = r'\.\/ckpts\/[\w\-\.\/]+'
+    if re.search(pattern2, content):
+        matches = re.findall(pattern2, content)
+        content = re.sub(pattern2, checkpoint_repo, content)
+        replacements_made += len(matches)
+        print(f"✓ Replaced {len(matches)} ./ckpts/ paths")
 
     # Only write if content changed
     if content != original_content:
         with open(config_path, 'w') as f:
             f.write(content)
-        print("✓ Config file updated")
+        print(f"✓ Config file updated ({replacements_made} replacements)")
         return True
     else:
-        print("⚠ No matching patterns found to replace")
-        # Show first few lines for debugging
-        print("Config content preview:")
-        print("\n".join(content.split("\n")[:20]))
+        print("⚠ No ./ckpts/ patterns found to replace")
+        # Show full content for debugging
+        print("\n=== Config content ===")
+        print(content)
+        print("=== End of config ===\n")
         return False
 
 def main():
