@@ -91,14 +91,29 @@ def patch_config_file(file_path):
                 changes.append(f"VAE ({current_vae} → hunyuan_vae)")
 
         # 3. Patch T5 text encoder
-        # Look for text_encoder with type="t5"
-        t5_pattern = r'(text_encoder\s*=\s*dict\s*\([^)]*type\s*=\s*["\']t5["\'][^)]*from_pretrained\s*=\s*)["\']([^"\']+)["\']'
-        t5_match = re.search(t5_pattern, content, re.DOTALL | re.IGNORECASE)
-        if t5_match:
-            current_t5 = t5_match.group(2)
+        # T5 can be defined as type="t5" OR type="text_embedder" OR in variable named "t5"
+        # Pattern 1: Look for variable named t5 = dict(...)
+        t5_var_pattern = r'(t5\s*=\s*dict\s*\([^)]*from_pretrained\s*=\s*)["\']([^"\']+)["\']'
+        t5_var_match = re.search(t5_var_pattern, content, re.DOTALL)
+        if t5_var_match:
+            current_t5 = t5_var_match.group(2)
             if 'google/t5' not in current_t5:
                 content = re.sub(
-                    t5_pattern,
+                    t5_var_pattern,
+                    r'\1"google/t5-v1_1-xxl"',
+                    content,
+                    flags=re.DOTALL
+                )
+                changes.append(f"T5 encoder ({current_t5} → google/t5-v1_1-xxl)")
+
+        # Pattern 2: Look for type="t5" or type="text_embedder"
+        t5_type_pattern = r'(text_encoder\s*=\s*dict\s*\([^)]*type\s*=\s*["\'](?:t5|text_embedder)["\'][^)]*from_pretrained\s*=\s*)["\']([^"\']+)["\']'
+        t5_type_match = re.search(t5_type_pattern, content, re.DOTALL | re.IGNORECASE)
+        if t5_type_match and 't5' not in changes[-1] if changes else True:
+            current_t5 = t5_type_match.group(2)
+            if 'google/t5' not in current_t5:
+                content = re.sub(
+                    t5_type_pattern,
                     r'\1"google/t5-v1_1-xxl"',
                     content,
                     flags=re.DOTALL | re.IGNORECASE
@@ -106,19 +121,42 @@ def patch_config_file(file_path):
                 changes.append(f"T5 encoder ({current_t5} → google/t5-v1_1-xxl)")
 
         # 4. Patch CLIP text encoder
-        # Look for text_encoder with type="clip"
-        clip_pattern = r'(text_encoder\s*=\s*dict\s*\([^)]*type\s*=\s*["\']clip["\'][^)]*from_pretrained\s*=\s*)["\']([^"\']+)["\']'
-        clip_match = re.search(clip_pattern, content, re.DOTALL | re.IGNORECASE)
-        if clip_match:
-            current_clip = clip_match.group(2)
+        # Look for variable named clip = dict(...)
+        clip_var_pattern = r'(clip\s*=\s*dict\s*\([^)]*from_pretrained\s*=\s*)["\']([^"\']+)["\']'
+        clip_var_match = re.search(clip_var_pattern, content, re.DOTALL)
+        if clip_var_match:
+            current_clip = clip_var_match.group(2)
             if 'openai/clip' not in current_clip:
                 content = re.sub(
-                    clip_pattern,
+                    clip_var_pattern,
+                    r'\1"openai/clip-vit-large-patch14"',
+                    content,
+                    flags=re.DOTALL
+                )
+                changes.append(f"CLIP encoder ({current_clip} → openai/clip-vit-large-patch14)")
+
+        # Pattern 2: Look for type="clip"
+        clip_type_pattern = r'(text_encoder\s*=\s*dict\s*\([^)]*type\s*=\s*["\']clip["\'][^)]*from_pretrained\s*=\s*)["\']([^"\']+)["\']'
+        clip_type_match = re.search(clip_type_pattern, content, re.DOTALL | re.IGNORECASE)
+        if clip_type_match and 'clip' not in changes[-1] if changes else True:
+            current_clip = clip_type_match.group(2)
+            if 'openai/clip' not in current_clip:
+                content = re.sub(
+                    clip_type_pattern,
                     r'\1"openai/clip-vit-large-patch14"',
                     content,
                     flags=re.DOTALL | re.IGNORECASE
                 )
                 changes.append(f"CLIP encoder ({current_clip} → openai/clip-vit-large-patch14)")
+
+        # 5. Generic fallback: Replace ANY remaining hpcai-tech/Open-Sora-v2/Open_Sora_v2.safetensors
+        # that appears in from_pretrained (shouldn't be there for text encoders)
+        generic_pattern = r'(from_pretrained\s*=\s*)["\'](hpcai-tech/Open-Sora-v2/Open_Sora_v2\.safetensors)["\']'
+        remaining = re.findall(generic_pattern, content)
+        if remaining:
+            # This is a safety catch - these should have been caught by specific patterns
+            print(f"  ⚠ Warning: Found {len(remaining)} generic Open_Sora_v2 references")
+            print(f"    Manual review recommended for: {file_path}")
 
         if content != original:
             file_path.write_text(content)
