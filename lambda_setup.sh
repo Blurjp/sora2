@@ -199,6 +199,10 @@ if [ "$SKIP_OPENSORA" != "true" ]; then
     pip install flash-attn --no-build-isolation > /tmp/flash_attn_install.log 2>&1
     print_success "flash-attn installed"
 
+    echo "Upgrading rich library (fixing compatibility)..."
+    pip install --upgrade rich > /tmp/rich_install.log 2>&1
+    print_success "rich library upgraded"
+
     print_success "Open-Sora installation complete"
 fi
 
