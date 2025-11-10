@@ -222,6 +222,14 @@ echo "Downgrading numpy to 1.x for compatibility..."
 pip install "numpy<2" > /tmp/numpy_install.log 2>&1
 print_success "numpy downgraded to 1.x"
 
+echo "Patching Open-Sora to make tensornvme optional..."
+python3 "$PROJECT_PATH/patch_opensora_tensornvme.py"
+if [ $? -eq 0 ]; then
+    print_success "Open-Sora patched - tensornvme is now optional"
+else
+    print_warning "Patch failed, but continuing anyway"
+fi
+
 echo "Installing tensornvme for checkpoint loading (this may take 2-3 minutes)..."
 # First, uninstall any broken partial installation
 pip uninstall -y tensornvme > /dev/null 2>&1

@@ -111,9 +111,23 @@ if ! python3 -c "from rich.progress import MofNCompleteColumn" 2>/dev/null; then
     pip install --upgrade rich > /dev/null 2>&1
 fi
 
-# Check tensornvme (optional - Open-Sora will handle it at runtime)
+# Check if Open-Sora needs tensornvme patch
+echo "Checking Open-Sora tensornvme compatibility..."
+if python3 -c "import sys; import site; import os; sp = site.getsitepackages() + [site.getusersitepackages()]; ckpt_file = next((os.path.join(p, 'opensora', 'utils', 'ckpt.py') for p in sp if os.path.exists(os.path.join(p, 'opensora', 'utils', 'ckpt.py'))), None); sys.exit(0 if not ckpt_file or 'TENSORNVME_AVAILABLE' in open(ckpt_file).read() else 1)" 2>/dev/null; then
+    echo "✓ Open-Sora already patched for optional tensornvme"
+else
+    echo "Patching Open-Sora to make tensornvme optional..."
+    python3 "$(dirname "$0")/patch_opensora_tensornvme.py"
+    if [ $? -eq 0 ]; then
+        echo "✓ Open-Sora patched successfully"
+    else
+        echo "⚠ Patch failed - service may not start"
+    fi
+fi
+
+# Check tensornvme (optional - not required for A100/H100)
 if ! python3 -c "from tensornvme.async_file_io import AsyncFileWriter" 2>/dev/null; then
-    echo "Note: tensornvme not installed (this is OK - Open-Sora will handle it)"
+    echo "Note: tensornvme not installed (this is OK for A100/H100 GPUs)"
 fi
 
 echo "Dependencies OK"
