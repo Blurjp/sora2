@@ -1,4 +1,5 @@
 @echo off
+setlocal enabledelayedexpansion
 REM ============================================================================
 REM Restart Script - Kill all Python processes and start fresh (Windows)
 REM ============================================================================
@@ -20,12 +21,28 @@ timeout /t 2 /nobreak >nul
 echo [OK] All Python processes stopped
 echo.
 
-REM Step 2: Detect mode
+REM Step 2: Load environment from .env file if it exists
+if exist "%~dp0.env" (
+    echo Loading configuration from .env file...
+    for /f "usebackq tokens=1,* delims==" %%a in ("%~dp0.env") do (
+        set "line=%%a"
+        REM Skip comments and empty lines
+        if not "!line:~0,1!"=="#" (
+            if not "%%a"=="" (
+                set "%%a=%%b"
+            )
+        )
+    )
+    echo.
+)
+
+REM Step 3: Detect mode
 echo [2/3] Detecting configuration...
 echo.
 
 set MODE=local
-set GPU_URL=%GPU_SERVICE_URL%
+if not "%GPU_SERVICE_URL%"=="" set GPU_URL=%GPU_SERVICE_URL%
+if "%GPU_URL%"=="" set GPU_URL=%GPU_SERVICE_URL%
 set LOCAL_PORT=8000
 
 REM Parse command line arguments
@@ -104,6 +121,8 @@ if "%MODE%"=="local" (
     echo   Local Port:  %LOCAL_PORT%
     if not "%GPU_API_KEY%"=="" (
         echo   API Key:     [SET]
+    ) else (
+        echo   API Key:     [NOT SET]
     )
     echo.
     echo Open browser at: http://localhost:%LOCAL_PORT%
@@ -116,6 +135,7 @@ if "%MODE%"=="local" (
     set GPU_SERVICE_URL=%GPU_URL%
     set HOST=127.0.0.1
     set PORT=%LOCAL_PORT%
+    if not "%GPU_API_KEY%"=="" set GPU_API_KEY=%GPU_API_KEY%
 
     python backend\main.py
 
