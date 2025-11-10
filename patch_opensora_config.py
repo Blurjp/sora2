@@ -11,20 +11,33 @@ import site
 from pathlib import Path
 
 def find_opensora_configs():
-    """Find Open-Sora config directory in site-packages."""
-    # Check all site-packages locations
-    site_packages = site.getsitepackages() + [site.getusersitepackages()]
-
-    for sp in site_packages:
-        config_dir = Path(sp) / "opensora" / "configs" / "diffusion" / "inference"
-        if config_dir.exists():
-            return config_dir
-
-    # Also check OPENSORA_PATH if set
+    """Find Open-Sora config directory."""
+    # Check OPENSORA_PATH first (most likely location for cloned repo)
     opensora_path = os.environ.get('OPENSORA_PATH')
     if opensora_path:
         config_dir = Path(opensora_path) / "configs" / "diffusion" / "inference"
         if config_dir.exists():
+            print(f"Found configs in OPENSORA_PATH: {config_dir}")
+            return config_dir
+
+    # Check Open-Sora repo in common locations
+    common_paths = [
+        Path.home() / "Open-Sora" / "configs" / "diffusion" / "inference",
+        Path("/home/ubuntu/Open-Sora/configs/diffusion/inference"),
+        Path("/lambda/nfs/sora2/Open-Sora/configs/diffusion/inference"),
+    ]
+
+    for config_dir in common_paths:
+        if config_dir.exists():
+            print(f"Found configs at: {config_dir}")
+            return config_dir
+
+    # Finally check site-packages
+    site_packages = site.getsitepackages() + [site.getusersitepackages()]
+    for sp in site_packages:
+        config_dir = Path(sp) / "opensora" / "configs" / "diffusion" / "inference"
+        if config_dir.exists():
+            print(f"Found configs in site-packages: {config_dir}")
             return config_dir
 
     return None
