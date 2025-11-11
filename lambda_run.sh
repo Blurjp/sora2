@@ -130,8 +130,38 @@ if ! python3 -c "from tensornvme.async_file_io import AsyncFileWriter" 2>/dev/nu
     echo "Note: tensornvme not installed (this is OK for A100/H100 GPUs)"
 fi
 
-# Check and patch Open-Sora config for Hugging Face checkpoint
-python3 "$(dirname "$0")/hf_patch_opensora_config.py"
+# Fix Open-Sora config paths automatically
+echo "Checking Open-Sora configuration..."
+CONFIG_FILE="$OPENSORA_PATH/configs/diffusion/inference/256px.py"
+
+if [ -f "$CONFIG_FILE" ]; then
+    # Check if config needs fixing (contains ./ckpts/ paths)
+    if grep -q "from_pretrained.*['\"]\\./ckpts/" "$CONFIG_FILE" 2>/dev/null; then
+        echo "⚠ Fixing Open-Sora component paths..."
+
+        # Create backup
+        cp "$CONFIG_FILE" "$CONFIG_FILE.backup.$(date +%s)"
+
+        # Fix all component paths
+        sed -i \
+            -e "s|from_pretrained.*=.*['\"]\\./ckpts/hunyuan_vae\\.safetensors['\"]|from_pretrained=\"hpcai-tech/Open-Sora-v2\", subfolder=\"hunyuan_vae\"|g" \
+            -e "s|from_pretrained.*=.*['\"]\\./ckpts/google/t5-v1_1-xxl['\"]|from_pretrained=\"google/t5-v1_1-xxl\"|g" \
+            -e "s|from_pretrained.*=.*['\"]\\./ckpts/openai/clip-vit-large-patch14['\"]|from_pretrained=\"openai/clip-vit-large-patch14\"|g" \
+            -e "s|from_pretrained.*=.*['\"]\\./ckpts/Open_Sora_v2\\.safetensors['\"]|from_pretrained=\"hpcai-tech/Open-Sora-v2\", subfolder=\"model\"|g" \
+            "$CONFIG_FILE"
+
+        echo "✓ Config paths fixed"
+    else
+        echo "✓ Config paths already correct"
+    fi
+
+    # Also run Python patcher as fallback
+    python3 "$(dirname "$0")/hf_patch_opensora_config.py"
+else
+    echo "⚠ Config file not found, will use defaults"
+    # Still try Python patcher
+    python3 "$(dirname "$0")/hf_patch_opensora_config.py" || true
+fi
 
 echo "Dependencies OK"
 
