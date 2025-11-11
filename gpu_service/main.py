@@ -168,11 +168,21 @@ async def check_status(video_id: str):
                 message="Video is being generated"
             )
         else:
-            return StatusResponse(
-                status="not_found",
-                video_id=video_id,
-                message="Video not found or generation failed"
-            )
+            # Check if there's a stored error for this video_id
+            error = generator.get_error(video_id)
+            if error:
+                return StatusResponse(
+                    status="failed",
+                    video_id=video_id,
+                    message="Video generation failed",
+                    error=error
+                )
+            else:
+                return StatusResponse(
+                    status="not_found",
+                    video_id=video_id,
+                    message="Video not found"
+                )
 
     except Exception as e:
         logger.error(f"Error checking status: {e}", exc_info=True)

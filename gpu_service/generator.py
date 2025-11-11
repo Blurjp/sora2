@@ -30,6 +30,8 @@ class VideoGenerator:
         self.opensora_path = Path(OPENSORA_PATH)
         self._generation_lock = asyncio.Lock()
         self._current_task: Optional[asyncio.Task] = None
+        # Track errors for each video_id
+        self._errors: Dict[str, str] = {}
         # Set conservative CUDA allocator defaults to reduce fragmentation
         os.environ.setdefault(
             "PYTORCH_CUDA_ALLOC_CONF",
@@ -52,6 +54,10 @@ class VideoGenerator:
         """Return True while a torchrun task is still running."""
         task = self._current_task
         return task is not None and not task.done()
+
+    def get_error(self, video_id: str) -> Optional[str]:
+        """Get stored error for a video_id if any"""
+        return self._errors.get(video_id)
 
     def _patch_opensora_memory(self, config_filename: str) -> None:
         """Best-effort patch: enable temporal tiling in the VAE to lower VRAM.
@@ -201,6 +207,21 @@ class VideoGenerator:
                 # Run generation
                 result = await self._run_generation(cmd)
 
+                # Log stdout/stderr for debugging
+                if result.stdout:
+                    stdout_text = result.stdout.decode(errors="ignore")
+                    logger.info(f"=== Generation stdout for {video_id} ===")
+                    for line in stdout_text.split('\n'):
+                        if line.strip():
+                            logger.info(f"STDOUT: {line}")
+
+                if result.stderr:
+                    stderr_text = result.stderr.decode(errors="ignore")
+                    logger.info(f"=== Generation stderr for {video_id} ===")
+                    for line in stderr_text.split('\n'):
+                        if line.strip():
+                            logger.error(f"STDERR: {line}")
+
                 if result.returncode != 0:
                     err_text = (result.stderr or b"").decode(errors="ignore")
                     # Retry strategy on CUDA OOM: reduce frames and tighten allocator split
@@ -226,19 +247,23 @@ class VideoGenerator:
                         else:
                             error_msg = (retry.stderr or b"").decode(errors="ignore") or err_text or "Unknown error"
                             logger.error(f"Generation failed after retry: {error_msg}")
+                            self._errors[video_id] = error_msg
                             return {"success": False, "error": error_msg}
                     else:
                         error_msg = err_text or "Unknown error"
                         logger.error(f"Generation failed: {error_msg}")
+                        self._errors[video_id] = error_msg
                         return {"success": False, "error": error_msg}
 
                 # Find generated video file in job-specific directory
                 generated_files = list(job_output_dir.glob("*.mp4"))
                 if not generated_files:
-                    logger.error("No video file generated")
+                    error_msg = "No video file generated"
+                    logger.error(error_msg)
+                    self._errors[video_id] = error_msg
                     return {
                         "success": False,
-                        "error": "No video file generated"
+                        "error": error_msg
                     }
 
                 # Get the generated file (should only be one in this directory)
@@ -263,10 +288,12 @@ class VideoGenerator:
                 }
 
             except Exception as e:
-                logger.error(f"Error generating video: {e}", exc_info=True)
+                error_msg = f"Exception during video generation: {str(e)}"
+                logger.error(error_msg, exc_info=True)
+                self._errors[video_id] = error_msg
                 return {
                     "success": False,
-                    "error": str(e)
+                    "error": error_msg
                 }
 
 
