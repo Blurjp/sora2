@@ -20,21 +20,21 @@ echo ""
 cp "$CONFIG_FILE" "$CONFIG_FILE.backup.$(date +%s)"
 echo "✓ Backup created"
 
-# Fix all paths - ensure each component points to the correct HF repo/file
+# Fix all paths - use correct OpenSora-STDiT-v3 repo
 sed -i \
-    -e "s|from_pretrained.*=.*['\"]\\./ckpts/hunyuan_vae\\.safetensors['\"]|from_pretrained=\"hpcai-tech/Open-Sora-v2/hunyuan_vae.safetensors\"|g" \
+    -e 's|"hpcai-tech/Open-Sora-v2/model"|"hpcai-tech/OpenSora-STDiT-v3/tree/main/model.safetensors"|g' \
+    -e 's|"hpcai-tech/OpenSora-STDiT-v3/model.safetensors"|"hpcai-tech/OpenSora-STDiT-v3/tree/main/model.safetensors"|g' \
+    -e 's|"hpcai-tech/OpenSora-STDiT-v3"|"hpcai-tech/OpenSora-STDiT-v3/tree/main/model.safetensors"|g' \
+    -e 's|"hpcai-tech/Open-Sora-v2/hunyuan_vae"|"hpcai-tech/OpenSora-STDiT-v3/hunyuan_vae.safetensors"|g' \
+    -e "s|from_pretrained.*=.*['\"]\\./ckpts/hunyuan_vae\\.safetensors['\"]|from_pretrained=\"hpcai-tech/OpenSora-STDiT-v3/hunyuan_vae.safetensors\"|g" \
     -e "s|from_pretrained.*=.*['\"]\\./ckpts/google/t5-v1_1-xxl['\"]|from_pretrained=\"google/t5-v1_1-xxl\"|g" \
     -e "s|from_pretrained.*=.*['\"]\\./ckpts/openai/clip-vit-large-patch14['\"]|from_pretrained=\"openai/clip-vit-large-patch14\"|g" \
-    -e "s|from_pretrained.*=.*['\"]\\./ckpts/Open_Sora_v2\\.safetensors['\"]|from_pretrained=\"hpcai-tech/OpenSora-STDiT-v3/model.safetensors\"|g" \
-    -e "s|from_pretrained[[:space:]]*=[[:space:]]*['\"]hpcai-tech/Open-Sora-v2[^'\"]*['\"][[:space:]]*,[[:space:]]*subfolder[[:space:]]*=[[:space:]]*['\"]hunyuan_vae['\"]|from_pretrained=\"hpcai-tech/Open-Sora-v2/hunyuan_vae.safetensors\"|g" \
-    -e "s|from_pretrained[[:space:]]*=[[:space:]]*['\"]hpcai-tech/Open-Sora-v2[^'\"]*['\"][[:space:]]*,[[:space:]]*subfolder[[:space:]]*=[[:space:]]*['\"]model['\"]|from_pretrained=\"hpcai-tech/OpenSora-STDiT-v3/model.safetensors\"|g" \
-    -e "s|hpcai-tech/OpenSora-STDiT-v3/tree/main/model.safetensors|hpcai-tech/OpenSora-STDiT-v3/model.safetensors|g" \
-    -e "s|hpcai-tech/OpenSora-STDiT-v3/hunyuan_vae.safetensors|hpcai-tech/Open-Sora-v2/hunyuan_vae.safetensors|g" \
+    -e "s|from_pretrained.*=.*['\"]\\./ckpts/Open_Sora_v2\\.safetensors['\"]|from_pretrained=\"hpcai-tech/OpenSora-STDiT-v3/tree/main/model.safetensors\"|g" \
     "$CONFIG_FILE"
 
 echo "✓ Fixed component paths:"
-echo "  - Model: hpcai-tech/OpenSora-STDiT-v3/model.safetensors"
-echo "  - VAE: hpcai-tech/Open-Sora-v2/hunyuan_vae.safetensors"
+echo "  - Model: hpcai-tech/OpenSora-STDiT-v3/tree/main/model.safetensors"
+echo "  - VAE: hpcai-tech/OpenSora-STDiT-v3/hunyuan_vae.safetensors"
 echo "  - T5: google/t5-v1_1-xxl"
 echo "  - CLIP: openai/clip-vit-large-patch14"
 echo ""
