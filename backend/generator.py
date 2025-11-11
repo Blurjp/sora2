@@ -147,7 +147,6 @@ class VideoGenerator:
                     "--standalone",
                     "scripts/diffusion/inference.py",
                     MODEL_CONFIG_PATH,
-                    "--ckpt", CHECKPOINT_PATH,  # Hugging Face Hub checkpoint
                     "--cond_type", "i2v_head",
                     "--ref", str(image_path),
                     "--prompt", prompt,
@@ -157,6 +156,11 @@ class VideoGenerator:
                     "--save_dir", str(job_output_dir),
                     "--offload", "True",  # Memory optimization
                 ]
+
+                # Only add --ckpt if explicitly set via environment variable
+                # Otherwise, let the config file's from_pretrained handle model loading
+                if CHECKPOINT_PATH and os.environ.get("CHECKPOINT_PATH"):
+                    cmd.extend(["--ckpt", CHECKPOINT_PATH])
 
                 # Add optional parameters
                 if seed is not None:

@@ -42,9 +42,10 @@ MODEL_RESOLUTION = "256px"  # or "768px" for higher quality
 MODEL_CONFIG_PATH = f"configs/diffusion/inference/{MODEL_RESOLUTION}.py"
 
 # Checkpoint configuration
-# Use Hugging Face Hub path for automatic download
-# Must include full path: org/repo/filename.safetensors
-CHECKPOINT_PATH = os.environ.get("CHECKPOINT_PATH", "hpcai-tech/OpenSora-STDiT-v3/model.safetensors")
+# Optional: Override model checkpoint via environment variable
+# If not set, the config file's from_pretrained will be used
+# Example: CHECKPOINT_PATH=hpcai-tech/OpenSora-STDiT-v3/model.safetensors
+CHECKPOINT_PATH = os.environ.get("CHECKPOINT_PATH", None)
 
 # Generation limits
 MAX_CONCURRENT_JOBS = 2

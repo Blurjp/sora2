@@ -27,8 +27,9 @@ FRAMES_PER_SECOND = 8
 MODEL_CONFIG_PATH = "configs/diffusion/inference/256px.py"
 
 # Checkpoint configuration
-# The 256px.py config already specifies the checkpoint in the model dict
-# But we can override it via environment variable if needed
+# Optional: Override model checkpoint via environment variable
+# If not set, the config file's from_pretrained will be used
+# Example: CHECKPOINT_PATH=hpcai-tech/OpenSora-STDiT-v3/model.safetensors
 CHECKPOINT_PATH = os.environ.get("CHECKPOINT_PATH", None)
 
 # Cleanup settings

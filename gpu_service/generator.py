@@ -202,8 +202,9 @@ class VideoGenerator:
                     "--offload", "True",  # Memory optimization
                 ]
 
-                # Add explicit checkpoint if provided via environment variable
-                if CHECKPOINT_PATH:
+                # Only add --ckpt if explicitly set via environment variable
+                # Otherwise, let the config file's from_pretrained handle model loading
+                if CHECKPOINT_PATH and os.environ.get("CHECKPOINT_PATH"):
                     cmd.extend(["--ckpt", CHECKPOINT_PATH])
 
                 # Add optional parameters
