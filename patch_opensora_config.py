@@ -1,200 +1,113 @@
 #!/usr/bin/env python3
 """
-Patch Open-Sora inference configs to use correct HuggingFace paths for each component.
-
-This fixes the "Missing key(s) in state_dict" error by ensuring:
-- Model: hpcai-tech/OpenSora-STDiT-v3/model.safetensors
-- VAE: hpcai-tech/Open-Sora-v2/hunyuan_vae.safetensors
-- T5 text encoder: google/t5-v1_1-xxl
-- CLIP text encoder: openai/clip-vit-large-patch14
+Patch Open-Sora inference configs to point each component at the correct
+Hugging Face repo/file. Handles legacy ./ckpts paths, subfolder references,
+and previously incorrect OpenSora-STDiT-v3 tree URLs.
 """
+
 import os
 import re
 import sys
 from pathlib import Path
 import site
 
+MODEL_PATH = "hpcai-tech/OpenSora-STDiT-v3/model.safetensors"
+VAE_PATH = "hpcai-tech/Open-Sora-v2/hunyuan_vae.safetensors"
+T5_PATH = "google/t5-v1_1-xxl"
+CLIP_PATH = "openai/clip-vit-large-patch14"
 
-def find_config_dir():
-    """Locate Open-Sora configs directory"""
-    # Try OPENSORA_PATH environment variable first
+
+def find_config_dir() -> Path | None:
+    """Locate the Open-Sora configs directory."""
     opensora_path = os.environ.get("OPENSORA_PATH")
     if opensora_path:
-        p = Path(opensora_path) / "configs" / "diffusion" / "inference"
-        if p.exists():
-            return p
+        cfg = Path(opensora_path) / "configs" / "diffusion" / "inference"
+        if cfg.exists():
+            return cfg
 
-    # Try common locations
-    common_paths = [
+    candidates = [
         Path.home() / "Open-Sora" / "configs" / "diffusion" / "inference",
         Path("/opt/Open-Sora/configs/diffusion/inference"),
         Path("/home/ubuntu/Open-Sora/configs/diffusion/inference"),
     ]
 
-    for p in common_paths:
-        if p.exists():
-            return p
+    for path in candidates:
+        if path.exists():
+            return path
 
-    # Try site-packages
     for sp in list(site.getsitepackages()) + [site.getusersitepackages()]:
         if sp:
-            p = Path(sp) / "opensora" / "configs" / "diffusion" / "inference"
-            if p.exists():
-                return p
+            cfg = Path(sp) / "opensora" / "configs" / "diffusion" / "inference"
+            if cfg.exists():
+                return cfg
 
     return None
 
 
-def patch_config_file(file_path):
-    """Patch a single config file with correct HuggingFace paths"""
+def apply_replacements(text: str) -> tuple[str, int]:
+    """Run all regex replacements and report how many edits were made."""
+    replacements = [
+        (r"\./ckpts/Open_Sora_v2\.safetensors", MODEL_PATH, "model ./ckpts path"),
+        (r"hpcai-tech/Open-Sora-v2/model", MODEL_PATH, "model subfolder reference"),
+        (r"hpcai-tech/OpenSora-STDiT-v3/tree/main/model\.safetensors", MODEL_PATH, "model tree URL"),
+        (
+            r'from_pretrained\s*=\s*["\']hpcai-tech/Open-Sora-v2[^"\']*["\']\s*,\s*subfolder\s*=\s*["\']model["\']',
+            f'from_pretrained="{MODEL_PATH}"',
+            "model subfolder block",
+        ),
+        (r"\./ckpts/hunyuan_vae\.safetensors", VAE_PATH, "VAE ./ckpts path"),
+        (r"hpcai-tech/OpenSora-STDiT-v3/hunyuan_vae\.safetensors", VAE_PATH, "VAE wrong repo"),
+        (
+            r'from_pretrained\s*=\s*["\']hpcai-tech/Open-Sora-v2[^"\']*["\']\s*,\s*subfolder\s*=\s*["\']hunyuan_vae["\']',
+            f'from_pretrained="{VAE_PATH}"',
+            "VAE subfolder block",
+        ),
+        (r"\./ckpts/google/t5-v1_1-xxl", T5_PATH, "T5 ./ckpts path"),
+        (
+            r'from_pretrained\s*=\s*["\']hpcai-tech/Open-Sora-v2[^"\']*["\']\s*,\s*subfolder\s*=\s*["\']google/t5-v1_1-xxl["\']',
+            f'from_pretrained="{T5_PATH}"',
+            "T5 subfolder block",
+        ),
+        (r"\./ckpts/openai/clip-vit-large-patch14", CLIP_PATH, "CLIP ./ckpts path"),
+        (
+            r'from_pretrained\s*=\s*["\']hpcai-tech/Open-Sora-v2[^"\']*["\']\s*,\s*subfolder\s*=\s*["\']openai/clip-vit-large-patch14["\']',
+            f'from_pretrained="{CLIP_PATH}"',
+            "CLIP subfolder block",
+        ),
+    ]
+
+    total_changes = 0
+    for pattern, replacement, desc in replacements:
+        text, count = re.subn(pattern, replacement, text, flags=re.MULTILINE)
+        if count:
+            total_changes += count
+            print(f"  ✓ {desc}: {count} change(s)")
+
+    return text, total_changes
+
+
+def patch_config_file(file_path: Path) -> bool:
+    """Patch a single config file."""
     if not file_path.exists():
         print(f"Skipping {file_path} (not found)")
         return False
 
     print(f"\nPatching {file_path}...")
+    content = file_path.read_text()
+    new_content, changes = apply_replacements(content)
 
-    try:
-        content = file_path.read_text()
-        original = content
-
-        # Create backup
-        backup_path = file_path.with_suffix(file_path.suffix + '.backup')
-        if not backup_path.exists():
-            backup_path.write_text(original)
-            print(f"  → Backup saved: {backup_path.name}")
-
-        changes = []
-
-        # 1. Patch main model checkpoint path (./ckpts/... to HF Hub)
-        main_model_pattern = r'(["\'])\.\/ckpts\/[^"\']+\.safetensors\1'
-        if re.search(main_model_pattern, content):
-            content = re.sub(
-                main_model_pattern,
-                '"hpcai-tech/OpenSora-STDiT-v3/model.safetensors"',
-                content
-            )
-            changes.append("main model checkpoint")
-
-        # 2. Patch VAE to use hunyuan_vae.safetensors
-        # Look for ae = dict(...from_pretrained=...,...)
-        vae_pattern = r'(ae\s*=\s*dict\s*\([^)]*from_pretrained\s*=\s*)["\']([^"\']+)["\']'
-        vae_match = re.search(vae_pattern, content, re.DOTALL)
-        if vae_match:
-            current_vae = vae_match.group(2)
-            if 'hunyuan_vae' not in current_vae:
-                content = re.sub(
-                    vae_pattern,
-                    r'\1"hpcai-tech/Open-Sora-v2/hunyuan_vae.safetensors"',
-                    content,
-                    flags=re.DOTALL
-                )
-                changes.append(f"VAE ({current_vae} → hunyuan_vae)")
-
-        # 3. Patch T5 text encoder
-        # T5 can be defined as type="t5" OR type="text_embedder" OR in variable named "t5"
-        # Pattern 1: Look for variable named t5 = dict(...)
-        t5_var_pattern = r'(t5\s*=\s*dict\s*\([^)]*from_pretrained\s*=\s*)["\']([^"\']+)["\']'
-        t5_var_match = re.search(t5_var_pattern, content, re.DOTALL)
-        if t5_var_match:
-            current_t5 = t5_var_match.group(2)
-            if 'google/t5' not in current_t5:
-                content = re.sub(
-                    t5_var_pattern,
-                    r'\1"google/t5-v1_1-xxl"',
-                    content,
-                    flags=re.DOTALL
-                )
-                changes.append(f"T5 encoder ({current_t5} → google/t5-v1_1-xxl)")
-
-        # Pattern 2: Look for type="t5" or type="text_embedder"
-        t5_type_pattern = r'(text_encoder\s*=\s*dict\s*\([^)]*type\s*=\s*["\'](?:t5|text_embedder)["\'][^)]*from_pretrained\s*=\s*)["\']([^"\']+)["\']'
-        t5_type_match = re.search(t5_type_pattern, content, re.DOTALL | re.IGNORECASE)
-        if t5_type_match and 't5' not in changes[-1] if changes else True:
-            current_t5 = t5_type_match.group(2)
-            if 'google/t5' not in current_t5:
-                content = re.sub(
-                    t5_type_pattern,
-                    r'\1"google/t5-v1_1-xxl"',
-                    content,
-                    flags=re.DOTALL | re.IGNORECASE
-                )
-                changes.append(f"T5 encoder ({current_t5} → google/t5-v1_1-xxl)")
-
-        # 4. Patch CLIP text encoder
-        # Look for variable named clip = dict(...)
-        clip_var_pattern = r'(clip\s*=\s*dict\s*\([^)]*from_pretrained\s*=\s*)["\']([^"\']+)["\']'
-        clip_var_match = re.search(clip_var_pattern, content, re.DOTALL)
-        if clip_var_match:
-            current_clip = clip_var_match.group(2)
-            if 'openai/clip' not in current_clip:
-                content = re.sub(
-                    clip_var_pattern,
-                    r'\1"openai/clip-vit-large-patch14"',
-                    content,
-                    flags=re.DOTALL
-                )
-                changes.append(f"CLIP encoder ({current_clip} → openai/clip-vit-large-patch14)")
-
-        # Pattern 2: Look for type="clip"
-        clip_type_pattern = r'(text_encoder\s*=\s*dict\s*\([^)]*type\s*=\s*["\']clip["\'][^)]*from_pretrained\s*=\s*)["\']([^"\']+)["\']'
-        clip_type_match = re.search(clip_type_pattern, content, re.DOTALL | re.IGNORECASE)
-        if clip_type_match and 'clip' not in changes[-1] if changes else True:
-            current_clip = clip_type_match.group(2)
-            if 'openai/clip' not in current_clip:
-                content = re.sub(
-                    clip_type_pattern,
-                    r'\1"openai/clip-vit-large-patch14"',
-                    content,
-                    flags=re.DOTALL | re.IGNORECASE
-                )
-                changes.append(f"CLIP encoder ({current_clip} → openai/clip-vit-large-patch14)")
-
-        # 5. Generic fallback: Replace ANY remaining hpcai-tech/OpenSora-STDiT-v3/model.safetensors
-        # that appears in from_pretrained (shouldn't be there for text encoders)
-        generic_pattern = r'(from_pretrained\s*=\s*)["\'](hpcai-tech/OpenSora-STDiT-v3/model\.safetensors)["\']'
-        remaining = re.findall(generic_pattern, content)
-        if remaining:
-            # This is a safety catch - these should have been caught by specific patterns
-            print(f"  ⚠ Warning: Found {len(remaining)} generic OpenSora-STDiT-v3 references")
-            print(f"    Manual review recommended for: {file_path}")
-
-        if content != original:
-            file_path.write_text(content)
-            print(f"  ✓ Patched: {', '.join(changes)}")
-            return True
-        else:
-            print(f"  → Already correct or no matches found")
-            return False
-
-    except Exception as e:
-        print(f"  ✗ Error: {e}")
+    if not changes:
+        print("  • No replacements needed")
         return False
 
+    backup = file_path.with_suffix(file_path.suffix + ".backup")
+    if not backup.exists():
+        backup.write_text(content)
+        print(f"  ✓ Backup saved: {backup.name}")
 
-def verify_hf_downloads():
-    """Verify that models can be downloaded from HuggingFace"""
-    print("\n" + "=" * 70)
-    print("Verifying HuggingFace downloads...")
-    print("=" * 70)
-
-    try:
-        from huggingface_hub import hf_hub_download
-
-        models = [
-            ("hpcai-tech/OpenSora-STDiT-v3", "model.safetensors", "Main model"),
-            ("hpcai-tech/Open-Sora-v2", "hunyuan_vae.safetensors", "VAE"),
-        ]
-
-        for repo, filename, name in models:
-            try:
-                print(f"\n{name}: {repo}/{filename}")
-                path = hf_hub_download(repo, filename)
-                print(f"  ✓ Available: {path}")
-            except Exception as e:
-                print(f"  ✗ Error: {e}")
-
-    except ImportError:
-        print("  ⚠ huggingface_hub not installed, skipping verification")
+    file_path.write_text(new_content)
+    print(f"  ✓ Updated {changes} segment(s)")
+    return True
 
 
 def main():
@@ -202,57 +115,33 @@ def main():
     print("Open-Sora Component Config Patcher")
     print("=" * 70)
     print()
-    print("This script fixes component paths to avoid state_dict errors:")
-    print("  - VAE: hpcai-tech/Open-Sora-v2/hunyuan_vae.safetensors")
-    print("  - T5: google/t5-v1_1-xxl")
-    print("  - CLIP: openai/clip-vit-large-patch14")
-    print("  - Model: hpcai-tech/OpenSora-STDiT-v3/model.safetensors")
+    print("Targets:")
+    print(f"  - Model : {MODEL_PATH}")
+    print(f"  - VAE   : {VAE_PATH}")
+    print(f"  - T5    : {T5_PATH}")
+    print(f"  - CLIP  : {CLIP_PATH}")
     print()
 
-    # Find config directory
     config_dir = find_config_dir()
-
     if not config_dir:
-        print("ERROR: Could not find Open-Sora configs directory!")
-        print()
-        print("Please set OPENSORA_PATH environment variable:")
-        print("  export OPENSORA_PATH=/path/to/Open-Sora")
-        print()
+        print("ERROR: Could not locate Open-Sora inference configs.")
+        print("Set OPENSORA_PATH or install open-sora in the current environment.")
         sys.exit(1)
 
     print(f"Config directory: {config_dir}")
 
-    # Patch target files
-    targets = [
-        config_dir / "256px.py",
-        config_dir / "768px.py",
-    ]
+    any_changes = False
+    for name in ("256px.py", "768px.py"):
+        path = config_dir / name
+        if path.exists():
+            any_changes |= patch_config_file(path)
+        else:
+            print(f"Skipping missing config: {path}")
 
-    patched_count = 0
-    for target in targets:
-        if patch_config_file(target):
-            patched_count += 1
-
-    print("\n" + "=" * 70)
-    if patched_count > 0:
-        print(f"✓ Successfully patched {patched_count} config file(s)")
-        print()
-        print("Next steps:")
-        print("  1. Restart GPU service:")
-        print("     ./lambda_run_gpu_service.sh --api-key YOUR_KEY")
-        print()
-        print("  2. Or if using restart script:")
-        print("     ./restart.sh --gpu-service --api-key YOUR_KEY")
-        print()
-        print("  3. Try generating a video")
+    if not any_changes:
+        print("\nNo changes were required; configs already point to the correct Hugging Face paths.")
     else:
-        print("No changes needed - configs already correct")
-
-    # Optional verification
-    if '--verify' in sys.argv:
-        verify_hf_downloads()
-
-    print("=" * 70)
+        print("\nDone! Restart the GPU service so the new paths take effect.")
 
 
 if __name__ == "__main__":
