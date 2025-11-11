@@ -165,14 +165,13 @@ class VideoGenerator:
                 # Prepare output path
                 output_path = OUTPUT_DIR / f"{video_id}.mp4"
 
-                # Build command for STDiT v3
+                # Build command - config already contains checkpoint path
                 cmd = [
                     "torchrun",
                     "--nproc_per_node", "1",
                     "--standalone",
                     "scripts/diffusion/inference.py",
                     MODEL_CONFIG_PATH,
-                    "--ckpt", CHECKPOINT_PATH,  # STDiT v3 requires explicit checkpoint
                     "--cond_type", "i2v_head",
                     "--ref", str(image_path),
                     "--prompt", prompt,
@@ -182,6 +181,10 @@ class VideoGenerator:
                     "--save_dir", str(job_output_dir),
                     "--offload", "True",  # Memory optimization
                 ]
+
+                # Add explicit checkpoint if provided via environment variable
+                if CHECKPOINT_PATH:
+                    cmd.extend(["--ckpt", CHECKPOINT_PATH])
 
                 # Add optional parameters
                 if seed is not None:

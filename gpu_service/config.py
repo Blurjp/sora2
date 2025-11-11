@@ -23,12 +23,13 @@ PORT = int(os.environ.get("PORT", "8001"))
 # Video generation settings
 FRAMES_PER_SECOND = 8
 
-# Model configuration - Use STDiT v3 config
-MODEL_CONFIG_PATH = "configs/opensora/stdit_v3.yaml"
+# Model configuration - Use existing inference config
+MODEL_CONFIG_PATH = "configs/diffusion/inference/256px.py"
 
 # Checkpoint configuration
-# Use Hugging Face Hub repo ID (without filename)
-CHECKPOINT_PATH = os.environ.get("CHECKPOINT_PATH", "hpcai-tech/OpenSora-STDiT-v3")
+# The 256px.py config already specifies the checkpoint in the model dict
+# But we can override it via environment variable if needed
+CHECKPOINT_PATH = os.environ.get("CHECKPOINT_PATH", None)
 
 # Cleanup settings
 CLEANUP_AFTER_HOURS = 24  # Delete generated videos after 24 hours
