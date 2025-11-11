@@ -22,6 +22,17 @@ echo -e "${YELLOW}TensorNVMe provides GPU-to-SSD offloading for large models${NC
 echo -e "${YELLOW}It's optional - only needed if you have limited GPU VRAM${NC}"
 echo ""
 
+# Check if PyTorch is installed
+echo -e "${YELLOW}Checking PyTorch installation...${NC}"
+if ! python3 -c "import torch" 2>/dev/null; then
+    echo -e "${YELLOW}PyTorch not found. Installing PyTorch with CUDA support...${NC}"
+    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+    echo -e "${GREEN}✓ PyTorch installed${NC}"
+else
+    echo -e "${GREEN}✓ PyTorch already installed${NC}"
+fi
+echo ""
+
 # Clone repository
 echo -e "${YELLOW}Cloning TensorNVMe repository...${NC}"
 cd /tmp
