@@ -43,7 +43,7 @@ def patch_file(path: Path, checkpoint: str) -> bool:
     vae_pattern = r'from_pretrained\s*=\s*["\']\.\/ckpts\/hunyuan_vae\.safetensors["\']'
     if re.search(vae_pattern, text):
         text = re.sub(vae_pattern,
-                     'from_pretrained="hpcai-tech/Open-Sora-v2/hunyuan_vae"',
+                     'from_pretrained="hpcai-tech/Open-Sora-v2/hunyuan_vae.safetensors"',
                      text)
         changes_made.append("VAE")
 
@@ -82,7 +82,7 @@ def patch_file(path: Path, checkpoint: str) -> bool:
     # Match both with and without the filename in the path
     old_vae_subfolder = r'from_pretrained\s*=\s*["\']hpcai-tech/Open-Sora-v2[^"\']*["\']\s*,\s*subfolder\s*=\s*["\']hunyuan_vae["\']'
     if re.search(old_vae_subfolder, text):
-        text = re.sub(old_vae_subfolder, 'from_pretrained="hpcai-tech/Open-Sora-v2/hunyuan_vae"', text)
+        text = re.sub(old_vae_subfolder, 'from_pretrained="hpcai-tech/Open-Sora-v2/hunyuan_vae.safetensors"', text)
         if "VAE" not in changes_made:
             changes_made.append("VAE (old subfolder)")
 

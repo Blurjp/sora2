@@ -12,14 +12,14 @@ Missing key(s) in state_dict for AutoencoderKLCausal3D
 Open-Sora inference configs point **all components** (model, VAE, T5, CLIP) to the same checkpoint file. This causes the VAE to try loading from the main model weights, which have different keys.
 
 **Incorrect (current):**
-- Model: `hpcai-tech/OpenSora-STDiT-v3/tree/main/model.safetensors`
-- VAE: `hpcai-tech/OpenSora-STDiT-v3/tree/main/model.safetensors` ❌ **WRONG!**
-- T5: `hpcai-tech/OpenSora-STDiT-v3/tree/main/model.safetensors` ❌ **WRONG!**
-- CLIP: `hpcai-tech/OpenSora-STDiT-v3/tree/main/model.safetensors` ❌ **WRONG!**
+- Model: `hpcai-tech/OpenSora-STDiT-v3/model.safetensors`
+- VAE: `hpcai-tech/OpenSora-STDiT-v3/model.safetensors` ❌ **WRONG!**
+- T5: `hpcai-tech/OpenSora-STDiT-v3/model.safetensors` ❌ **WRONG!**
+- CLIP: `hpcai-tech/OpenSora-STDiT-v3/model.safetensors` ❌ **WRONG!**
 
 **Correct:**
-- Model: `hpcai-tech/OpenSora-STDiT-v3/tree/main/model.safetensors` ✅
-- VAE: `hpcai-tech/OpenSora-STDiT-v3/hunyuan_vae.safetensors` ✅
+- Model: `hpcai-tech/OpenSora-STDiT-v3/model.safetensors` ✅
+- VAE: `hpcai-tech/Open-Sora-v2/hunyuan_vae.safetensors` ✅
 - T5: `google/t5-v1_1-xxl` ✅
 - CLIP: `openai/clip-vit-large-patch14` ✅
 
@@ -97,7 +97,7 @@ The `patch_opensora_config.py` script:
    - VAE: `hunyuan_vae.safetensors`
    - T5: `google/t5-v1_1-xxl`
    - CLIP: `openai/clip-vit-large-patch14`
-4. **Sets** main model path to `hpcai-tech/OpenSora-STDiT-v3/tree/main/model.safetensors`
+4. **Sets** main model path to `hpcai-tech/OpenSora-STDiT-v3/model.safetensors`
 
 ## Manual Verification
 
@@ -246,8 +246,8 @@ cp 768px.py.backup 768px.py
 
 | Component | Wrong Path | Correct Path |
 |-----------|-----------|--------------|
-| Model | ❌ Open_Sora_v2.safetensors | ✅ OpenSora-STDiT-v3/tree/main/model.safetensors |
-| VAE | ❌ Open_Sora_v2.safetensors | ✅ OpenSora-STDiT-v3/hunyuan_vae.safetensors |
+| Model | ❌ Open_Sora_v2.safetensors | ✅ OpenSora-STDiT-v3/model.safetensors |
+| VAE | ❌ Open_Sora_v2.safetensors | ✅ hpcai-tech/Open-Sora-v2/hunyuan_vae.safetensors |
 | T5 | ❌ Open_Sora_v2.safetensors | ✅ google/t5-v1_1-xxl |
 | CLIP | ❌ Open_Sora_v2.safetensors | ✅ openai/clip-vit-large-patch14 |
 
