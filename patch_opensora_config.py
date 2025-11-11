@@ -3,8 +3,8 @@
 Patch Open-Sora inference configs to use correct HuggingFace paths for each component.
 
 This fixes the "Missing key(s) in state_dict" error by ensuring:
-- Model (flux): hpcai-tech/OpenSora-STDiT-v3/model.safetensors
-- VAE (hunyuan): hpcai-tech/Open-Sora-v2/hunyuan_vae.safetensors
+- Model: hpcai-tech/OpenSora-STDiT-v3/model.safetensors
+- VAE: hpcai-tech/OpenSora-STDiT-v3/hunyuan_vae.safetensors
 - T5 text encoder: google/t5-v1_1-xxl
 - CLIP text encoder: openai/clip-vit-large-patch14
 """
@@ -203,10 +203,10 @@ def main():
     print("=" * 70)
     print()
     print("This script fixes component paths to avoid state_dict errors:")
-    print("  - VAE: hunyuan_vae.safetensors")
+    print("  - VAE: hpcai-tech/OpenSora-STDiT-v3/hunyuan_vae.safetensors")
     print("  - T5: google/t5-v1_1-xxl")
     print("  - CLIP: openai/clip-vit-large-patch14")
-    print("  - Model: OpenSora-STDiT-v3/model.safetensors")
+    print("  - Model: hpcai-tech/OpenSora-STDiT-v3/model.safetensors")
     print()
 
     # Find config directory

@@ -19,7 +19,7 @@ Open-Sora inference configs point **all components** (model, VAE, T5, CLIP) to t
 
 **Correct:**
 - Model: `hpcai-tech/OpenSora-STDiT-v3/model.safetensors` ✅
-- VAE: `hpcai-tech/Open-Sora-v2/hunyuan_vae.safetensors` ✅
+- VAE: `hpcai-tech/OpenSora-STDiT-v3/hunyuan_vae.safetensors` ✅
 - T5: `google/t5-v1_1-xxl` ✅
 - CLIP: `openai/clip-vit-large-patch14` ✅
 
@@ -247,7 +247,7 @@ cp 768px.py.backup 768px.py
 | Component | Wrong Path | Correct Path |
 |-----------|-----------|--------------|
 | Model | ❌ Open_Sora_v2.safetensors | ✅ OpenSora-STDiT-v3/model.safetensors |
-| VAE | ❌ Open_Sora_v2.safetensors | ✅ hunyuan_vae.safetensors |
+| VAE | ❌ Open_Sora_v2.safetensors | ✅ OpenSora-STDiT-v3/hunyuan_vae.safetensors |
 | T5 | ❌ Open_Sora_v2.safetensors | ✅ google/t5-v1_1-xxl |
 | CLIP | ❌ Open_Sora_v2.safetensors | ✅ openai/clip-vit-large-patch14 |
 
