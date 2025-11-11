@@ -96,6 +96,26 @@ motionScoreInput.addEventListener('input', () => {
     motionScoreValue.textContent = motionScoreInput.value;
 });
 
+// Advanced settings sliders
+const numStepsInput = document.getElementById('numStepsInput');
+const numStepsValue = document.getElementById('numStepsValue');
+const guidanceInput = document.getElementById('guidanceInput');
+const guidanceValue = document.getElementById('guidanceValue');
+const guidanceImgInput = document.getElementById('guidanceImgInput');
+const guidanceImgValue = document.getElementById('guidanceImgValue');
+
+numStepsInput.addEventListener('input', () => {
+    numStepsValue.textContent = numStepsInput.value;
+});
+
+guidanceInput.addEventListener('input', () => {
+    guidanceValue.textContent = parseFloat(guidanceInput.value).toFixed(1);
+});
+
+guidanceImgInput.addEventListener('input', () => {
+    guidanceImgValue.textContent = parseFloat(guidanceImgInput.value).toFixed(1);
+});
+
 // Form submission
 videoForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -110,6 +130,11 @@ videoForm.addEventListener('submit', async (e) => {
     formData.append('duration', document.getElementById('durationInput').value);
     formData.append('aspect_ratio', document.getElementById('aspectRatioInput').value);
     formData.append('motion_score', motionScoreInput.value);
+
+    // Advanced quality settings
+    formData.append('num_steps', numStepsInput.value);
+    formData.append('guidance', guidanceInput.value);
+    formData.append('guidance_img', guidanceImgInput.value);
 
     const seed = document.getElementById('seedInput').value;
     if (seed) {

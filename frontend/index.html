@@ -67,11 +67,12 @@
                             <input
                                 type="number"
                                 id="durationInput"
-                                min="10"
-                                max="20"
+                                min="5"
+                                max="30"
                                 value="15"
                                 required
                             >
+                            <small class="hint">5-30 seconds</small>
                         </div>
 
                         <div class="form-group">
@@ -114,6 +115,73 @@
                             >
                         </div>
                     </div>
+
+                    <!-- Advanced Quality Settings -->
+                    <details class="advanced-settings">
+                        <summary><strong>⚙️ Advanced Quality Settings</strong></summary>
+                        <div class="settings-grid">
+                            <div class="form-group">
+                                <label for="numStepsInput">
+                                    <strong>Quality Steps</strong>
+                                    <span class="tooltip">ℹ️
+                                        <span class="tooltiptext">More steps = better quality but slower (20-150)</span>
+                                    </span>
+                                </label>
+                                <input
+                                    type="range"
+                                    id="numStepsInput"
+                                    min="20"
+                                    max="150"
+                                    step="5"
+                                    value="100"
+                                >
+                                <div class="range-value">
+                                    <span id="numStepsValue">100</span> steps
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="guidanceInput">
+                                    <strong>Prompt Strength</strong>
+                                    <span class="tooltip">ℹ️
+                                        <span class="tooltiptext">Higher = follows prompt more closely (1-20)</span>
+                                    </span>
+                                </label>
+                                <input
+                                    type="range"
+                                    id="guidanceInput"
+                                    min="1"
+                                    max="20"
+                                    step="0.5"
+                                    value="10"
+                                >
+                                <div class="range-value">
+                                    <span id="guidanceValue">10.0</span>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="guidanceImgInput">
+                                    <strong>Image Influence</strong>
+                                    <span class="tooltip">ℹ️
+                                        <span class="tooltiptext">Higher = stays closer to reference image (0.5-5)</span>
+                                    </span>
+                                </label>
+                                <input
+                                    type="range"
+                                    id="guidanceImgInput"
+                                    min="0.5"
+                                    max="5"
+                                    step="0.5"
+                                    value="2.5"
+                                >
+                                <div class="range-value">
+                                    <span id="guidanceImgValue">2.5</span>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="hint">💡 Default values are optimized for face quality and prompt following</p>
+                    </details>
 
                     <!-- Advanced Options -->
                     <div class="form-group">

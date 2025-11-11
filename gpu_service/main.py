@@ -12,7 +12,12 @@ from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Depends, Hea
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-from .config import HOST, PORT, API_KEY, TEMP_DIR, OUTPUT_DIR
+from .config import (
+    HOST, PORT, API_KEY, TEMP_DIR, OUTPUT_DIR,
+    DEFAULT_NUM_STEPS, MIN_NUM_STEPS, MAX_NUM_STEPS,
+    DEFAULT_GUIDANCE, MIN_GUIDANCE, MAX_GUIDANCE,
+    DEFAULT_GUIDANCE_IMG, MIN_GUIDANCE_IMG, MAX_GUIDANCE_IMG
+)
 from .generator import generator
 
 # Configure logging
@@ -88,9 +93,12 @@ async def health():
 async def generate_video(
     image: UploadFile = File(..., description="Input image file"),
     prompt: str = Form(..., description="Text prompt for video generation"),
-    duration: int = Form(15, description="Video duration in seconds (10-20)"),
+    duration: int = Form(15, description="Video duration in seconds (5-30)"),
     aspect_ratio: str = Form("16:9", description="Video aspect ratio"),
     motion_score: float = Form(0.5, description="Motion intensity (0.0-1.0)"),
+    num_steps: int = Form(DEFAULT_NUM_STEPS, description=f"Diffusion steps ({MIN_NUM_STEPS}-{MAX_NUM_STEPS})"),
+    guidance: float = Form(DEFAULT_GUIDANCE, description=f"Text guidance ({MIN_GUIDANCE}-{MAX_GUIDANCE})"),
+    guidance_img: float = Form(DEFAULT_GUIDANCE_IMG, description=f"Image guidance ({MIN_GUIDANCE_IMG}-{MAX_GUIDANCE_IMG})"),
     seed: Optional[int] = Form(None, description="Random seed"),
     refine_prompt: bool = Form(False, description="Refine prompt with AI"),
     api_key: str = Depends(verify_api_key)
@@ -110,10 +118,29 @@ async def generate_video(
             )
 
         # Validate duration
-        if not (10 <= duration <= 20):
+        if not (5 <= duration <= 30):
             raise HTTPException(
                 status_code=400,
-                detail="Duration must be between 10 and 20 seconds"
+                detail="Duration must be between 5 and 30 seconds"
+            )
+
+        # Validate advanced parameters
+        if not (MIN_NUM_STEPS <= num_steps <= MAX_NUM_STEPS):
+            raise HTTPException(
+                status_code=400,
+                detail=f"num_steps must be between {MIN_NUM_STEPS} and {MAX_NUM_STEPS}"
+            )
+
+        if not (MIN_GUIDANCE <= guidance <= MAX_GUIDANCE):
+            raise HTTPException(
+                status_code=400,
+                detail=f"guidance must be between {MIN_GUIDANCE} and {MAX_GUIDANCE}"
+            )
+
+        if not (MIN_GUIDANCE_IMG <= guidance_img <= MAX_GUIDANCE_IMG):
+            raise HTTPException(
+                status_code=400,
+                detail=f"guidance_img must be between {MIN_GUIDANCE_IMG} and {MAX_GUIDANCE_IMG}"
             )
 
         # Generate unique video ID
@@ -139,6 +166,9 @@ async def generate_video(
                 duration=duration,
                 aspect_ratio=aspect_ratio,
                 motion_score=motion_score,
+                num_steps=num_steps,
+                guidance=guidance,
+                guidance_img=guidance_img,
                 seed=seed,
                 refine_prompt=refine_prompt
             )

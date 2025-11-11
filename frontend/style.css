@@ -385,6 +385,86 @@ footer a {
     margin-top: 8px;
 }
 
+/* Advanced Settings */
+.advanced-settings {
+    margin: 24px 0;
+    padding: 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    background: #f7fafc;
+}
+
+.advanced-settings summary {
+    cursor: pointer;
+    padding: 8px 0;
+    color: #667eea;
+    user-select: none;
+    list-style: none;
+}
+
+.advanced-settings summary::-webkit-details-marker {
+    display: none;
+}
+
+.advanced-settings summary:hover {
+    color: #764ba2;
+}
+
+.advanced-settings[open] summary {
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.advanced-settings .settings-grid {
+    margin-top: 8px;
+}
+
+/* Tooltip */
+.tooltip {
+    position: relative;
+    display: inline-block;
+    margin-left: 4px;
+    cursor: help;
+    color: #a0aec0;
+    font-size: 0.9rem;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 200px;
+    background-color: #2d3748;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 8px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -100px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 0.875rem;
+    font-weight: normal;
+}
+
+.tooltip .tooltiptext::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #2d3748 transparent transparent transparent;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     header h1 {
@@ -401,5 +481,10 @@ footer a {
 
     .result-actions {
         flex-direction: column;
+    }
+
+    .tooltip .tooltiptext {
+        width: 160px;
+        margin-left: -80px;
     }
 }

@@ -18,6 +18,9 @@ from .config import (
     FRAMES_PER_SECOND,
     MODEL_CONFIG_PATH,
     CHECKPOINT_PATH,
+    DEFAULT_NUM_STEPS,
+    DEFAULT_GUIDANCE,
+    DEFAULT_GUIDANCE_IMG,
 )
 
 logger = logging.getLogger(__name__)
@@ -60,9 +63,9 @@ class VideoGenerator:
         if not any(kw in prompt_lower for kw in quality_keywords):
             enhancements.append("high quality")
 
-        # Add face preservation keywords if face/person detected
-        face_keywords = ['face', 'person', 'she', 'he', 'woman', 'man', 'girl', 'boy', 'people']
-        if any(kw in prompt_lower for kw in face_keywords):
+        # Add face preservation keywords if face/person detected (whole word match)
+        face_keywords = [r'\bface\b', r'\bperson\b', r'\bwoman\b', r'\bman\b', r'\bgirl\b', r'\bboy\b', r'\bpeople\b', r'\bportrait\b']
+        if any(re.search(pattern, prompt_lower) for pattern in face_keywords):
             if 'detailed face' not in prompt_lower and 'clear face' not in prompt_lower:
                 enhancements.append("detailed facial features")
 
@@ -130,9 +133,9 @@ class VideoGenerator:
         duration: int = 15,
         aspect_ratio: str = "16:9",
         motion_score: float = 0.5,
-        num_steps: int = 75,
-        guidance: float = 10.0,
-        guidance_img: float = 1.5,
+        num_steps: int = DEFAULT_NUM_STEPS,
+        guidance: float = DEFAULT_GUIDANCE,
+        guidance_img: float = DEFAULT_GUIDANCE_IMG,
         seed: Optional[int] = None,
         refine_prompt: bool = False
     ) -> Dict:

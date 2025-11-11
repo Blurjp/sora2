@@ -73,6 +73,9 @@ class GPUClient:
         duration: int = 15,
         aspect_ratio: str = "16:9",
         motion_score: float = 0.5,
+        num_steps: int = 100,
+        guidance: float = 10.0,
+        guidance_img: float = 2.5,
         seed: Optional[int] = None,
         refine_prompt: bool = False
     ) -> Dict:
@@ -85,6 +88,9 @@ class GPUClient:
             duration: Video duration in seconds
             aspect_ratio: Video aspect ratio
             motion_score: Motion intensity
+            num_steps: Diffusion steps
+            guidance: Text guidance strength
+            guidance_img: Image guidance strength
             seed: Random seed
             refine_prompt: Whether to refine prompt
 
@@ -109,6 +115,9 @@ class GPUClient:
                 data.add_field('duration', str(duration))
                 data.add_field('aspect_ratio', aspect_ratio)
                 data.add_field('motion_score', str(motion_score))
+                data.add_field('num_steps', str(num_steps))
+                data.add_field('guidance', str(guidance))
+                data.add_field('guidance_img', str(guidance_img))
                 if seed is not None:
                     data.add_field('seed', str(seed))
                 data.add_field('refine_prompt', str(refine_prompt).lower())

@@ -37,6 +37,9 @@ class RemoteVideoGenerator:
         duration: int,
         aspect_ratio: str,
         motion_score: float,
+        num_steps: int,
+        guidance: float,
+        guidance_img: float,
         seed: Optional[int],
         refine_prompt: bool
     ) -> bool:
@@ -59,6 +62,9 @@ class RemoteVideoGenerator:
                 duration=duration,
                 aspect_ratio=aspect_ratio,
                 motion_score=motion_score,
+                num_steps=num_steps,
+                guidance=guidance,
+                guidance_img=guidance_img,
                 seed=seed,
                 refine_prompt=refine_prompt
             )
@@ -74,6 +80,9 @@ class RemoteVideoGenerator:
         duration: int,
         aspect_ratio: str,
         motion_score: float,
+        num_steps: int,
+        guidance: float,
+        guidance_img: float,
         seed: Optional[int],
         refine_prompt: bool
     ):
@@ -96,6 +105,9 @@ class RemoteVideoGenerator:
                 duration=duration,
                 aspect_ratio=aspect_ratio,
                 motion_score=motion_score,
+                num_steps=num_steps,
+                guidance=guidance,
+                guidance_img=guidance_img,
                 seed=seed,
                 refine_prompt=refine_prompt
             )

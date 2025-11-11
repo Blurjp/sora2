@@ -18,6 +18,9 @@ from .config import (
     FRAMES_PER_SECOND,
     MODEL_CONFIG_PATH,
     CHECKPOINT_PATH,
+    DEFAULT_NUM_STEPS,
+    DEFAULT_GUIDANCE,
+    DEFAULT_GUIDANCE_IMG,
 )
 
 logger = logging.getLogger(__name__)
@@ -52,6 +55,33 @@ class VideoGenerator:
         frames = 4 * k + 1
         # Ensure within limits
         return min(frames, 125)  # Max 125 (4*31+1)
+
+    def _enhance_prompt_for_quality(self, prompt: str) -> str:
+        """
+        Enhance prompt for better quality and face preservation
+        Adds quality-improving keywords if not already present
+        """
+        prompt_lower = prompt.lower()
+        enhancements = []
+
+        # Add quality keywords if not present
+        quality_keywords = ['high quality', 'detailed', 'sharp', 'clear', '4k', '8k', 'hd']
+        if not any(kw in prompt_lower for kw in quality_keywords):
+            enhancements.append("high quality")
+
+        # Add face preservation keywords if face/person detected (whole word match)
+        face_keywords = [r'\bface\b', r'\bperson\b', r'\bwoman\b', r'\bman\b', r'\bgirl\b', r'\bboy\b', r'\bpeople\b', r'\bportrait\b']
+        if any(re.search(pattern, prompt_lower) for pattern in face_keywords):
+            if 'detailed face' not in prompt_lower and 'clear face' not in prompt_lower:
+                enhancements.append("detailed facial features")
+
+        # Add smooth motion keyword for video quality
+        if 'smooth' not in prompt_lower and 'fluid' not in prompt_lower:
+            enhancements.append("smooth motion")
+
+        if enhancements:
+            return f"{prompt}, {', '.join(enhancements)}"
+        return prompt
 
     def is_processing(self) -> bool:
         """Return True while a torchrun task is still running."""
@@ -141,6 +171,9 @@ class VideoGenerator:
         duration: int = 15,
         aspect_ratio: str = "16:9",
         motion_score: float = 0.5,
+        num_steps: int = DEFAULT_NUM_STEPS,
+        guidance: float = DEFAULT_GUIDANCE,
+        guidance_img: float = DEFAULT_GUIDANCE_IMG,
         seed: Optional[int] = None,
         refine_prompt: bool = False
     ) -> Dict:
@@ -163,14 +196,22 @@ class VideoGenerator:
         # Acquire lock to prevent concurrent generations
         async with self._generation_lock:
             try:
+                # Enhance prompt for better quality and face preservation
+                enhanced_prompt = self._enhance_prompt_for_quality(prompt)
+                if enhanced_prompt != prompt:
+                    logger.info(f"Enhanced prompt for quality: {enhanced_prompt}")
+
                 # Log generation parameters
                 logger.info(f"=== Starting video generation: {video_id} ===")
                 logger.info(f"Parameters:")
                 logger.info(f"  - Image: {image_path}")
-                logger.info(f"  - Prompt: {prompt}")
+                logger.info(f"  - Prompt: {enhanced_prompt}")
                 logger.info(f"  - Duration: {duration}s")
                 logger.info(f"  - Aspect ratio: {aspect_ratio}")
                 logger.info(f"  - Motion score: {motion_score}")
+                logger.info(f"  - Num steps: {num_steps}")
+                logger.info(f"  - Guidance: {guidance}")
+                logger.info(f"  - Guidance img: {guidance_img}")
                 logger.info(f"  - Seed: {seed}")
                 logger.info(f"  - Refine prompt: {refine_prompt}")
 
@@ -185,16 +226,35 @@ class VideoGenerator:
                 # Prepare output path
                 output_path = OUTPUT_DIR / f"{video_id}.mp4"
 
-                # Build command - config already contains checkpoint path
+                # Create temporary config with custom parameters
+                config_template_path = Path(self.opensora_path) / MODEL_CONFIG_PATH
+                temp_config_path = job_output_dir / "config_temp.py"
+
+                # Read base config and modify parameters
+                with open(config_template_path, 'r') as f:
+                    config_content = f.read()
+
+                # Override sampling parameters
+                config_content = re.sub(r'num_steps\s*=\s*[0-9]+', f'num_steps={num_steps}', config_content)
+                config_content = re.sub(r'(?<!_)guidance\s*=\s*[0-9.]+', f'guidance={guidance}', config_content)
+                config_content = re.sub(r'guidance_img\s*=\s*[0-9.]+', f'guidance_img={guidance_img}', config_content)
+
+                # Write temporary config
+                with open(temp_config_path, 'w') as f:
+                    f.write(config_content)
+
+                logger.info(f"Using temporary config with custom parameters")
+
+                # Build command - use temporary config
                 cmd = [
                     "torchrun",
                     "--nproc_per_node", "1",
                     "--standalone",
                     "scripts/diffusion/inference.py",
-                    MODEL_CONFIG_PATH,
+                    str(temp_config_path),
                     "--cond_type", "i2v_head",
                     "--ref", str(image_path),
-                    "--prompt", prompt,
+                    "--prompt", enhanced_prompt,  # Use enhanced prompt
                     "--num_frames", str(num_frames),
                     "--aspect_ratio", aspect_ratio,
                     "--motion-score", str(motion_score),
