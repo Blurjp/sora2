@@ -28,6 +28,18 @@ app = FastAPI(
     version="1.0.0"
 )
 
+@app.on_event("startup")
+async def startup_event():
+    """Initialize service on startup"""
+    logger.info("Starting Open-Sora GPU Service")
+
+    # Auto-fix Open-Sora config on startup
+    from .opensora_config_fixer import fix_opensora_config
+    fix_opensora_config()
+
+    logger.info(f"Output directory: {OUTPUT_DIR}")
+    logger.info(f"Temp directory: {TEMP_DIR}")
+
 
 # Security: Optional API key authentication
 async def verify_api_key(x_api_key: Optional[str] = Header(None)):

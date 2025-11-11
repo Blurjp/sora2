@@ -73,6 +73,12 @@ async def startup_event():
     """Initialize service on startup"""
     logger.info("Starting Open-Sora Video Generation Service")
     logger.info(f"Mode: {'Remote GPU' if USE_REMOTE_GPU else 'Local GPU'}")
+
+    # Auto-fix Open-Sora config on startup (local mode only)
+    if not USE_REMOTE_GPU:
+        from .opensora_config_fixer import fix_opensora_config
+        fix_opensora_config()
+
     if USE_REMOTE_GPU:
         logger.info(f"GPU Service URL: {GPU_SERVICE_URL}")
         # Check GPU service health
