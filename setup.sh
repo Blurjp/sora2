@@ -28,6 +28,16 @@ fi
 echo -e "${GREEN}Python version $PYTHON_VERSION is compatible${NC}"
 echo ""
 
+# Install Lambda Labs Guest Agent (for Lambda Labs GPU instances)
+echo -e "${YELLOW}Installing Lambda Labs Guest Agent...${NC}"
+if curl -L https://lambdalabs-guest-agent.s3.us-west-2.amazonaws.com/scripts/install.sh | sudo bash; then
+    echo -e "${GREEN}Lambda Labs Guest Agent installed successfully${NC}"
+else
+    echo -e "${YELLOW}Warning: Lambda Labs Guest Agent installation failed or skipped${NC}"
+    echo -e "${YELLOW}This is only required for Lambda Labs instances${NC}"
+fi
+echo ""
+
 # Check if Open-Sora is installed
 echo -e "${YELLOW}Checking for Open-Sora installation...${NC}"
 
