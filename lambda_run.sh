@@ -178,5 +178,9 @@ fi
 # Use local GPU (not remote) for all-in-one Lambda setup
 export USE_REMOTE_GPU=false
 
+# Ensure project directory is in PYTHONPATH
+PROJECT_DIR="$(pwd)"
+export PYTHONPATH="$PROJECT_DIR:$PYTHONPATH"
+
 # Run as a module to support relative imports
 python3 -m backend.main
