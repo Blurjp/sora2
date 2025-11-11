@@ -36,20 +36,47 @@ def fix_opensora_config():
             content = re.sub(r'fps_save\s*=\s*[0-9]+', 'fps_save = 8', content)
             fixes_applied.append(f"fps_save: {old_fps} → 8 (match generation FPS)")
 
-        # Fix 2: Optimize motion settings
-        # Reduce image guidance for more motion freedom
-        img_guidance = re.search(r'guidance_img\s*=\s*([0-9.]+)', content)
-        if img_guidance and float(img_guidance.group(1)) > 2.0:
-            old_val = img_guidance.group(1)
-            content = re.sub(r'guidance_img\s*=\s*[0-9.]+', 'guidance_img=2.0', content)
-            fixes_applied.append(f"guidance_img: {old_val} → 2.0 (better motion)")
+        # Fix 2: Ensure aspect_ratio in config is NOT hardcoded
+        # The config should not override command-line aspect_ratio parameter
+        # Check if aspect_ratio is hardcoded in sampling_option
+        aspect_ratio_match = re.search(r'sampling_option\s*=\s*dict\([^}]+aspect_ratio\s*=\s*["\']([^"\']+)["\']', content, re.DOTALL)
+        if aspect_ratio_match:
+            logger.info(f"Config has default aspect_ratio: {aspect_ratio_match.group(1)} (will be overridden by request)")
 
-        # Increase text guidance for stronger prompt adherence
+        # Fix 3: AGGRESSIVE prompt following optimization
+        # Reduce image guidance SIGNIFICANTLY - allows more freedom from reference image
+        img_guidance = re.search(r'guidance_img\s*=\s*([0-9.]+)', content)
+        if img_guidance and float(img_guidance.group(1)) != 1.5:
+            old_val = img_guidance.group(1)
+            content = re.sub(r'guidance_img\s*=\s*[0-9.]+', 'guidance_img=1.5', content)
+            fixes_applied.append(f"guidance_img: {old_val} → 1.5 (more freedom from image)")
+
+        # MAXIMIZE text guidance - much stronger prompt adherence
         text_guidance = re.search(r'(?<!_)guidance\s*=\s*([0-9.]+)', content)
-        if text_guidance and float(text_guidance.group(1)) < 8.0:
+        if text_guidance and float(text_guidance.group(1)) != 10.0:
             old_val = text_guidance.group(1)
-            content = re.sub(r'(?<!_)guidance\s*=\s*[0-9.]+', 'guidance=8.5', content)
-            fixes_applied.append(f"guidance: {old_val} → 8.5 (stronger prompts)")
+            content = re.sub(r'(?<!_)guidance\s*=\s*[0-9.]+', 'guidance=10.0', content)
+            fixes_applied.append(f"guidance: {old_val} → 10.0 (MAXIMUM prompt adherence)")
+
+        # Increase diffusion steps for better quality and prompt following
+        num_steps = re.search(r'num_steps\s*=\s*([0-9]+)', content)
+        if num_steps and int(num_steps.group(1)) < 75:
+            old_val = num_steps.group(1)
+            content = re.sub(r'num_steps\s*=\s*[0-9]+', 'num_steps=75', content)
+            fixes_applied.append(f"num_steps: {old_val} → 75 (better quality)")
+
+        # Disable guidance oscillation - it reduces prompt effectiveness
+        if 'text_osci' in content:
+            text_osci = re.search(r'text_osci\s*=\s*(True|False)', content)
+            if text_osci and text_osci.group(1) == 'True':
+                content = re.sub(r'text_osci\s*=\s*True', 'text_osci=False', content)
+                fixes_applied.append(f"text_osci: True → False (consistent prompt guidance)")
+
+        if 'image_osci' in content:
+            image_osci = re.search(r'image_osci\s*=\s*(True|False)', content)
+            if image_osci and image_osci.group(1) == 'True':
+                content = re.sub(r'image_osci\s*=\s*True', 'image_osci=False', content)
+                fixes_applied.append(f"image_osci: True → False (consistent image guidance)")
 
         # Only write if changes were made
         if content != original_content:
