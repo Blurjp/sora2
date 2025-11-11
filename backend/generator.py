@@ -21,6 +21,9 @@ from .config import (
 
 logger = logging.getLogger(__name__)
 
+# Enable verbose logging with environment variable
+VERBOSE_GENERATION_LOGS = os.environ.get("VERBOSE_GENERATION_LOGS", "false").lower() == "true"
+
 
 class VideoGenerator:
     """Wrapper for Open-Sora 2.0 video generation"""
@@ -205,11 +208,19 @@ class VideoGenerator:
                         "error": error_msg
                     }
 
-                # Log output at debug level for successful runs
-                if stdout_text:
-                    logger.debug(f"Generation stdout (truncated): {stdout_text[-1000:]}")
-                if stderr_text:
-                    logger.debug(f"Generation stderr (truncated): {stderr_text[-1000:]}")
+                # Log output for successful runs
+                if VERBOSE_GENERATION_LOGS:
+                    # Full output when verbose logging is enabled
+                    if stdout_text:
+                        logger.info(f"Generation stdout (full):\n{stdout_text}")
+                    if stderr_text:
+                        logger.info(f"Generation stderr (full):\n{stderr_text}")
+                else:
+                    # Truncated output at debug level by default
+                    if stdout_text:
+                        logger.debug(f"Generation stdout (truncated): {stdout_text[-1000:]}")
+                    if stderr_text:
+                        logger.debug(f"Generation stderr (truncated): {stderr_text[-1000:]}")
 
                 # Find generated video file in job-specific directory (search recursively)
                 generated_files = list(job_output_dir.glob("**/*.mp4"))
