@@ -160,6 +160,17 @@ class VideoGenerator:
         # Acquire lock to prevent concurrent generations
         async with self._generation_lock:
             try:
+                # Log generation parameters
+                logger.info(f"=== Starting video generation: {video_id} ===")
+                logger.info(f"Parameters:")
+                logger.info(f"  - Image: {image_path}")
+                logger.info(f"  - Prompt: {prompt}")
+                logger.info(f"  - Duration: {duration}s")
+                logger.info(f"  - Aspect ratio: {aspect_ratio}")
+                logger.info(f"  - Motion score: {motion_score}")
+                logger.info(f"  - Seed: {seed}")
+                logger.info(f"  - Refine prompt: {refine_prompt}")
+
                 # Calculate frames
                 num_frames = self.calculate_frames(duration)
                 logger.info(f"Generating {num_frames} frames for {duration}s video")
@@ -200,30 +211,30 @@ class VideoGenerator:
                     cmd.append("--refine-prompt")
 
                 logger.info(f"Starting video generation: {video_id}")
-                logger.debug(f"Command: {' '.join(cmd)}")
+                logger.info(f"Working directory: {self.opensora_path}")
+                logger.info(f"Command: {' '.join(cmd)}")
 
                 start_time = time.time()
 
                 # Run generation
                 result = await self._run_generation(cmd)
 
-                # Log stdout/stderr for debugging
-                if result.stdout:
-                    stdout_text = result.stdout.decode(errors="ignore")
-                    logger.info(f"=== Generation stdout for {video_id} ===")
-                    for line in stdout_text.split('\n'):
-                        if line.strip():
-                            logger.info(f"STDOUT: {line}")
-
-                if result.stderr:
-                    stderr_text = result.stderr.decode(errors="ignore")
-                    logger.info(f"=== Generation stderr for {video_id} ===")
-                    for line in stderr_text.split('\n'):
-                        if line.strip():
-                            logger.error(f"STDERR: {line}")
-
                 if result.returncode != 0:
-                    err_text = (result.stderr or b"").decode(errors="ignore")
+                    # Log full stdout/stderr on failure
+                    if result.stdout:
+                        stdout_text = result.stdout.decode(errors="replace")
+                        logger.error(f"=== Generation stdout for {video_id} ===")
+                        for line in stdout_text.split('\n'):
+                            if line.strip():
+                                logger.error(f"STDOUT: {line}")
+
+                    if result.stderr:
+                        stderr_text = result.stderr.decode(errors="replace")
+                        logger.error(f"=== Generation stderr for {video_id} ===")
+                        for line in stderr_text.split('\n'):
+                            if line.strip():
+                                logger.error(f"STDERR: {line}")
+                    err_text = (result.stderr or b"").decode(errors="replace")
                     # Retry strategy on CUDA OOM: reduce frames and tighten allocator split
                     if "CUDA out of memory" in err_text or "torch.OutOfMemoryError" in err_text:
                         logger.warning("CUDA OOM detected. Retrying with fewer frames and allocator tweaks...")
@@ -245,7 +256,7 @@ class VideoGenerator:
                             stdout = retry.stdout
                             stderr = retry.stderr
                         else:
-                            error_msg = (retry.stderr or b"").decode(errors="ignore") or err_text or "Unknown error"
+                            error_msg = (retry.stderr or b"").decode(errors="replace") or err_text or "Unknown error"
                             logger.error(f"Generation failed after retry: {error_msg}")
                             self._errors[video_id] = error_msg
                             return {"success": False, "error": error_msg}
@@ -255,11 +266,32 @@ class VideoGenerator:
                         self._errors[video_id] = error_msg
                         return {"success": False, "error": error_msg}
 
+                # Log truncated output at debug level for successful runs
+                if result.stdout:
+                    stdout_text = result.stdout.decode(errors="replace")
+                    logger.debug(f"Generation stdout (last 1000 chars): {stdout_text[-1000:]}")
+                if result.stderr:
+                    stderr_text = result.stderr.decode(errors="replace")
+                    logger.debug(f"Generation stderr (last 1000 chars): {stderr_text[-1000:]}")
+
                 # Find generated video file in job-specific directory
                 generated_files = list(job_output_dir.glob("*.mp4"))
                 if not generated_files:
+                    # Log directory contents for debugging
+                    all_files = list(job_output_dir.glob("*"))
                     error_msg = "No video file generated"
-                    logger.error(error_msg)
+                    logger.error(f"{error_msg} in {job_output_dir}")
+                    logger.error(f"Directory contents: {[f.name for f in all_files]}")
+                    logger.error(f"Directory exists: {job_output_dir.exists()}")
+
+                    # Log last part of stdout/stderr if available
+                    if result.stdout:
+                        stdout_text = result.stdout.decode(errors="replace")
+                        logger.error(f"Last 500 chars of stdout: {stdout_text[-500:]}")
+                    if result.stderr:
+                        stderr_text = result.stderr.decode(errors="replace")
+                        logger.error(f"Last 500 chars of stderr: {stderr_text[-500:]}")
+
                     self._errors[video_id] = error_msg
                     return {
                         "success": False,

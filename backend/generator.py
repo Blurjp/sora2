@@ -115,6 +115,17 @@ class VideoGenerator:
         # Acquire lock to prevent concurrent generations
         async with self._generation_lock:
             try:
+                # Log generation parameters
+                logger.info(f"=== Starting video generation: {video_id} ===")
+                logger.info(f"Parameters:")
+                logger.info(f"  - Image: {image_path}")
+                logger.info(f"  - Prompt: {prompt}")
+                logger.info(f"  - Duration: {duration}s")
+                logger.info(f"  - Aspect ratio: {aspect_ratio}")
+                logger.info(f"  - Motion score: {motion_score}")
+                logger.info(f"  - Seed: {seed}")
+                logger.info(f"  - Refine prompt: {refine_prompt}")
+
                 # Calculate frames
                 num_frames = self.calculate_frames(duration)
                 logger.info(f"Generating {num_frames} frames for {duration}s video")
@@ -159,7 +170,8 @@ class VideoGenerator:
                 }
 
                 logger.info(f"Starting video generation: {video_id}")
-                logger.debug(f"Command: {' '.join(cmd)}")
+                logger.info(f"Working directory: {self.opensora_path}")
+                logger.info(f"Command: {' '.join(cmd)}")
 
                 # Run generation in subprocess
                 # Use all available GPUs (don't restrict to GPU 0)
@@ -173,9 +185,19 @@ class VideoGenerator:
                 # Stream output
                 stdout, stderr = await process.communicate()
 
+                # Decode output with error handling
+                stdout_text = stdout.decode(errors="replace") if stdout else ""
+                stderr_text = stderr.decode(errors="replace") if stderr else ""
+
                 if process.returncode != 0:
-                    error_msg = stderr.decode() if stderr else "Unknown error"
-                    logger.error(f"Generation failed: {error_msg}")
+                    # Log full output on failure
+                    if stdout_text:
+                        logger.error(f"Generation stdout:\n{stdout_text}")
+                    if stderr_text:
+                        logger.error(f"Generation stderr:\n{stderr_text}")
+
+                    error_msg = stderr_text or "Unknown error"
+                    logger.error(f"Generation failed with returncode {process.returncode}: {error_msg}")
                     self.jobs[video_id]["status"] = "failed"
                     self.jobs[video_id]["error"] = error_msg
                     return {
@@ -183,10 +205,21 @@ class VideoGenerator:
                         "error": error_msg
                     }
 
+                # Log output at debug level for successful runs
+                if stdout_text:
+                    logger.debug(f"Generation stdout (truncated): {stdout_text[-1000:]}")
+                if stderr_text:
+                    logger.debug(f"Generation stderr (truncated): {stderr_text[-1000:]}")
+
                 # Find generated video file in job-specific directory
                 generated_files = list(job_output_dir.glob("*.mp4"))
                 if not generated_files:
-                    logger.error("No video file generated")
+                    # Log directory contents for debugging
+                    all_files = list(job_output_dir.glob("*"))
+                    logger.error(f"No video file generated in {job_output_dir}")
+                    logger.error(f"Directory contents: {[f.name for f in all_files]}")
+                    logger.error(f"Last stdout: {stdout_text[-500:]}")
+                    logger.error(f"Last stderr: {stderr_text[-500:]}")
                     self.jobs[video_id]["status"] = "failed"
                     return {
                         "success": False,
