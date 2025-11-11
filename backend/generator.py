@@ -61,6 +61,9 @@ class VideoGenerator:
         duration: int,
         aspect_ratio: str,
         motion_score: float,
+        num_steps: int,
+        guidance: float,
+        guidance_img: float,
         seed: Optional[int],
         refine_prompt: bool
     ) -> bool:
@@ -78,6 +81,9 @@ class VideoGenerator:
                 duration=duration,
                 aspect_ratio=aspect_ratio,
                 motion_score=motion_score,
+                num_steps=num_steps,
+                guidance=guidance,
+                guidance_img=guidance_img,
                 seed=seed,
                 refine_prompt=refine_prompt,
             )
@@ -97,6 +103,9 @@ class VideoGenerator:
         duration: int = 15,
         aspect_ratio: str = "16:9",
         motion_score: float = 0.5,
+        num_steps: int = 75,
+        guidance: float = 10.0,
+        guidance_img: float = 1.5,
         seed: Optional[int] = None,
         refine_prompt: bool = False
     ) -> Dict:
@@ -127,6 +136,9 @@ class VideoGenerator:
                 logger.info(f"  - Duration: {duration}s")
                 logger.info(f"  - Aspect ratio: {aspect_ratio}")
                 logger.info(f"  - Motion score: {motion_score}")
+                logger.info(f"  - Num steps: {num_steps}")
+                logger.info(f"  - Guidance: {guidance}")
+                logger.info(f"  - Guidance img: {guidance_img}")
                 logger.info(f"  - Seed: {seed}")
                 logger.info(f"  - Refine prompt: {refine_prompt}")
 
@@ -141,13 +153,32 @@ class VideoGenerator:
                 # Prepare output path
                 output_path = OUTPUT_DIR / f"{video_id}.mp4"
 
-                # Build command
+                # Create temporary config with custom parameters
+                config_template_path = Path(self.opensora_path) / MODEL_CONFIG_PATH
+                temp_config_path = job_output_dir / "config_temp.py"
+
+                # Read base config and modify parameters
+                with open(config_template_path, 'r') as f:
+                    config_content = f.read()
+
+                # Override sampling parameters
+                config_content = re.sub(r'num_steps\s*=\s*[0-9]+', f'num_steps={num_steps}', config_content)
+                config_content = re.sub(r'(?<!_)guidance\s*=\s*[0-9.]+', f'guidance={guidance}', config_content)
+                config_content = re.sub(r'guidance_img\s*=\s*[0-9.]+', f'guidance_img={guidance_img}', config_content)
+
+                # Write temporary config
+                with open(temp_config_path, 'w') as f:
+                    f.write(config_content)
+
+                logger.info(f"Using temporary config with custom parameters")
+
+                # Build command - use temporary config
                 cmd = [
                     "torchrun",
                     "--nproc_per_node", "1",
                     "--standalone",
                     "scripts/diffusion/inference.py",
-                    MODEL_CONFIG_PATH,
+                    str(temp_config_path),
                     "--cond_type", "i2v_head",
                     "--ref", str(image_path),
                     "--prompt", prompt,

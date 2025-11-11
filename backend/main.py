@@ -35,6 +35,15 @@ from .config import (
     MAX_DURATION,
     USE_REMOTE_GPU,
     GPU_SERVICE_URL,
+    DEFAULT_NUM_STEPS,
+    MIN_NUM_STEPS,
+    MAX_NUM_STEPS,
+    DEFAULT_GUIDANCE,
+    MIN_GUIDANCE,
+    MAX_GUIDANCE,
+    DEFAULT_GUIDANCE_IMG,
+    MIN_GUIDANCE_IMG,
+    MAX_GUIDANCE_IMG,
 )
 
 # Configure logging
@@ -119,9 +128,12 @@ async def generate_video(
     background_tasks: BackgroundTasks,
     image: UploadFile = File(..., description="Input image file"),
     prompt: str = Form(..., description="Text prompt for video generation"),
-    duration: int = Form(15, description="Video duration in seconds (10-20)"),
+    duration: int = Form(15, description=f"Video duration in seconds ({MIN_DURATION}-{MAX_DURATION})"),
     aspect_ratio: str = Form("16:9", description="Video aspect ratio"),
     motion_score: float = Form(0.5, description="Motion intensity (0.0-1.0)"),
+    num_steps: int = Form(DEFAULT_NUM_STEPS, description=f"Diffusion steps ({MIN_NUM_STEPS}-{MAX_NUM_STEPS}, more=better quality)"),
+    guidance: float = Form(DEFAULT_GUIDANCE, description=f"Text guidance ({MIN_GUIDANCE}-{MAX_GUIDANCE}, higher=follows prompt more)"),
+    guidance_img: float = Form(DEFAULT_GUIDANCE_IMG, description=f"Image guidance ({MIN_GUIDANCE_IMG}-{MAX_GUIDANCE_IMG}, lower=more freedom)"),
     seed: Optional[int] = Form(None, description="Random seed"),
     refine_prompt: bool = Form(False, description="Refine prompt with AI")
 ):
@@ -130,9 +142,12 @@ async def generate_video(
 
     - **image**: Input image file (PNG, JPG, WEBP)
     - **prompt**: Text description for the video
-    - **duration**: Video length in seconds (10-20)
+    - **duration**: Video length in seconds
     - **aspect_ratio**: Video dimensions (16:9, 9:16, 1:1, 2.39:1)
     - **motion_score**: How much motion to apply (0.0-1.0)
+    - **num_steps**: Diffusion sampling steps (more = better quality but slower)
+    - **guidance**: Text guidance strength (higher = follows prompt description more closely)
+    - **guidance_img**: Image guidance strength (lower = more creative freedom from reference image)
     - **seed**: Random seed for reproducibility (optional)
     - **refine_prompt**: Use AI to enhance the prompt (optional)
     """
@@ -157,6 +172,27 @@ async def generate_video(
             raise HTTPException(
                 status_code=400,
                 detail=f"Duration must be between {MIN_DURATION} and {MAX_DURATION} seconds"
+            )
+
+        # Validate num_steps
+        if not (MIN_NUM_STEPS <= num_steps <= MAX_NUM_STEPS):
+            raise HTTPException(
+                status_code=400,
+                detail=f"num_steps must be between {MIN_NUM_STEPS} and {MAX_NUM_STEPS}"
+            )
+
+        # Validate guidance
+        if not (MIN_GUIDANCE <= guidance <= MAX_GUIDANCE):
+            raise HTTPException(
+                status_code=400,
+                detail=f"guidance must be between {MIN_GUIDANCE} and {MAX_GUIDANCE}"
+            )
+
+        # Validate guidance_img
+        if not (MIN_GUIDANCE_IMG <= guidance_img <= MAX_GUIDANCE_IMG):
+            raise HTTPException(
+                status_code=400,
+                detail=f"guidance_img must be between {MIN_GUIDANCE_IMG} and {MAX_GUIDANCE_IMG}"
             )
 
         # Generate unique video ID
@@ -187,6 +223,9 @@ async def generate_video(
             duration=duration,
             aspect_ratio=aspect_ratio,
             motion_score=motion_score,
+            num_steps=num_steps,
+            guidance=guidance,
+            guidance_img=guidance_img,
             seed=seed,
             refine_prompt=refine_prompt,
         )
