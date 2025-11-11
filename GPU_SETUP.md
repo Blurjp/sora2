@@ -155,23 +155,16 @@ The script automatically optimizes for **MAXIMUM quality**:
 
 ### Error: ModuleNotFoundError: No module named 'tensornvme'
 
-You have **two options** to fix this:
-
-**Option 1: Install TensorNVMe (Recommended if you have limited VRAM)**
+**Recommended Fix: Make it Optional**
 ```bash
 cd ~/sora2
-./install_tensornvme.sh
-```
-
-This installs TensorNVMe which provides GPU-to-SSD offloading for large models.
-
-**Option 2: Make it Optional (Recommended for A100/H100 with sufficient VRAM)**
-```bash
-cd ~/sora2
+git pull
 ./fix_tensornvme.sh
 ```
 
-This patches Open-Sora to make tensornvme optional (not required for most GPUs).
+This patches Open-Sora to make tensornvme optional. **TensorNVMe is NOT required** for GPUs with sufficient VRAM (A100/H100/etc). It only provides GPU-to-SSD offloading for systems with very limited VRAM.
+
+**Note:** Installing tensornvme from source has complex dependencies and build issues. The patch solution is simpler and works perfectly for your setup.
 
 Then restart:
 ```bash
