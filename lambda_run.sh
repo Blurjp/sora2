@@ -144,10 +144,10 @@ if [ -f "$CONFIG_FILE" ]; then
 
         # Fix all component paths
         sed -i \
-            -e "s|from_pretrained.*=.*['\"]\\./ckpts/hunyuan_vae\\.safetensors['\"]|from_pretrained=\"hpcai-tech/Open-Sora-v2\", subfolder=\"hunyuan_vae\"|g" \
+            -e "s|from_pretrained.*=.*['\"]\\./ckpts/hunyuan_vae\\.safetensors['\"]|from_pretrained=\"hpcai-tech/Open-Sora-v2/hunyuan_vae\"|g" \
             -e "s|from_pretrained.*=.*['\"]\\./ckpts/google/t5-v1_1-xxl['\"]|from_pretrained=\"google/t5-v1_1-xxl\"|g" \
             -e "s|from_pretrained.*=.*['\"]\\./ckpts/openai/clip-vit-large-patch14['\"]|from_pretrained=\"openai/clip-vit-large-patch14\"|g" \
-            -e "s|from_pretrained.*=.*['\"]\\./ckpts/Open_Sora_v2\\.safetensors['\"]|from_pretrained=\"hpcai-tech/Open-Sora-v2\", subfolder=\"model\"|g" \
+            -e "s|from_pretrained.*=.*['\"]\\./ckpts/Open_Sora_v2\\.safetensors['\"]|from_pretrained=\"hpcai-tech/Open-Sora-v2/model\"|g" \
             "$CONFIG_FILE"
 
         echo "✓ Config paths fixed"

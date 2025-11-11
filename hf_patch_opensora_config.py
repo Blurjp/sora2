@@ -43,7 +43,7 @@ def patch_file(path: Path, checkpoint: str) -> bool:
     vae_pattern = r'from_pretrained\s*=\s*["\']\.\/ckpts\/hunyuan_vae\.safetensors["\']'
     if re.search(vae_pattern, text):
         text = re.sub(vae_pattern,
-                     'from_pretrained="hpcai-tech/Open-Sora-v2", subfolder="hunyuan_vae"',
+                     'from_pretrained="hpcai-tech/Open-Sora-v2/hunyuan_vae"',
                      text)
         changes_made.append("VAE")
 
@@ -67,7 +67,7 @@ def patch_file(path: Path, checkpoint: str) -> bool:
     model_pattern = r'from_pretrained\s*=\s*["\']\.\/ckpts\/Open_Sora_v2\.safetensors["\']'
     if re.search(model_pattern, text):
         text = re.sub(model_pattern,
-                     'from_pretrained="hpcai-tech/Open-Sora-v2", subfolder="model"',
+                     'from_pretrained="hpcai-tech/Open-Sora-v2/model"',
                      text)
         changes_made.append("Model")
 
