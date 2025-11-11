@@ -87,6 +87,35 @@ if [ -n "$API_KEY" ]; then
     export GPU_API_KEY="$API_KEY"
 fi
 
+# Fix Open-Sora config paths automatically
+echo -e "${BLUE}Checking Open-Sora configuration...${NC}"
+CONFIG_FILE="$OPENSORA_PATH/configs/diffusion/inference/256px.py"
+
+if [ -f "$CONFIG_FILE" ]; then
+    # Check if config needs fixing (contains ./ckpts/ paths)
+    if grep -q "from_pretrained.*['\"]\\./ckpts/" "$CONFIG_FILE" 2>/dev/null; then
+        echo -e "${YELLOW}⚠ Fixing Open-Sora component paths...${NC}"
+
+        # Create backup
+        cp "$CONFIG_FILE" "$CONFIG_FILE.backup.$(date +%s)"
+
+        # Fix all component paths
+        sed -i \
+            -e "s|from_pretrained.*=.*['\"]\\./ckpts/hunyuan_vae\\.safetensors['\"]|from_pretrained=\"hpcai-tech/Open-Sora-v2\", subfolder=\"hunyuan_vae\"|g" \
+            -e "s|from_pretrained.*=.*['\"]\\./ckpts/google/t5-v1_1-xxl['\"]|from_pretrained=\"google/t5-v1_1-xxl\"|g" \
+            -e "s|from_pretrained.*=.*['\"]\\./ckpts/openai/clip-vit-large-patch14['\"]|from_pretrained=\"openai/clip-vit-large-patch14\"|g" \
+            -e "s|from_pretrained.*=.*['\"]\\./ckpts/Open_Sora_v2\\.safetensors['\"]|from_pretrained=\"hpcai-tech/Open-Sora-v2\", subfolder=\"model\"|g" \
+            "$CONFIG_FILE"
+
+        echo -e "${GREEN}✓ Config paths fixed${NC}"
+    else
+        echo -e "${GREEN}✓ Config paths already correct${NC}"
+    fi
+else
+    echo -e "${YELLOW}⚠ Config file not found, will use defaults${NC}"
+fi
+echo ""
+
 # Reduce CUDA memory fragmentation and large-split issues
 export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True,max_split_size_mb:128}"
 
