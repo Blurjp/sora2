@@ -288,6 +288,17 @@ DEFAULT_NUM_STEPS=120
 DEFAULT_GUIDANCE=12.0
 DEFAULT_GUIDANCE_IMG=3.5
 
+# MAXIMUM GPU PERFORMANCE SETTINGS
+# These environment variables optimize CUDA for full GPU utilization
+PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+TORCH_CUDNN_V8_API_ENABLED=1
+CUDA_LAUNCH_BLOCKING=0
+CUDNN_BENCHMARK=1
+CUDNN_DETERMINISTIC=0
+TORCH_ALLOW_TF32_CUBLAS_OVERRIDE=1
+TORCH_ALLOW_TF32=1
+PYTORCH_NO_CUDA_MEMORY_CACHING=0
+
 # Optional: Set GPU API key for authentication
 # GPU_API_KEY=your-secret-key-here
 EOF
@@ -360,5 +371,16 @@ echo "  • Quality Steps: 120 (MAXIMUM)"
 echo "  • Prompt Strength: 12.0 (VERY STRONG)"
 echo "  • Image Influence: 3.5 (STRONG face preservation)"
 echo ""
+echo -e "${BLUE}🚀 GPU Performance Optimizations:${NC}"
+echo "  • Model offloading DISABLED (models stay on GPU)"
+echo "  • CUDNN benchmarking ENABLED (auto-tune kernels)"
+echo "  • TensorFloat-32 ENABLED (faster on modern GPUs)"
+echo "  • Async CUDA launches ENABLED"
+echo "  • Memory caching ENABLED"
+echo ""
+echo -e "${GREEN}💪 Result: MAXIMUM GPU utilization and throughput!${NC}"
+echo ""
 echo -e "${YELLOW}💡 Tip: Use 'sudo systemctl enable opensora-gpu' to start on boot${NC}"
+echo ""
+echo -e "${YELLOW}⚡ Monitor GPU usage: watch -n 1 nvidia-smi${NC}"
 echo ""

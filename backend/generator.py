@@ -208,6 +208,9 @@ class VideoGenerator:
                 logger.info(f"Using temporary config with custom parameters")
 
                 # Build command - use temporary config
+                # IMPORTANT: Removed --offload for MAXIMUM GPU utilization
+                # Offloading moves models between CPU/GPU which reduces performance
+                # Only enable offload if you have low VRAM (<24GB)
                 cmd = [
                     "torchrun",
                     "--nproc_per_node", "1",
@@ -221,7 +224,7 @@ class VideoGenerator:
                     "--aspect_ratio", aspect_ratio,
                     "--motion-score", str(motion_score),
                     "--save_dir", str(job_output_dir),
-                    "--offload", "True",  # Memory optimization
+                    # --offload removed for full GPU utilization
                 ]
 
                 # Only add --ckpt if explicitly set via environment variable
@@ -247,13 +250,38 @@ class VideoGenerator:
                 logger.info(f"Working directory: {self.opensora_path}")
                 logger.info(f"Command: {' '.join(cmd)}")
 
-                # Run generation in subprocess
-                # Use all available GPUs (don't restrict to GPU 0)
+                # MAXIMUM GPU PERFORMANCE SETTINGS
+                # Set environment variables for optimal CUDA performance
+                env = os.environ.copy()
+                perf_env = {
+                    # PyTorch optimizations
+                    "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",  # Better memory management
+                    "TORCH_CUDNN_V8_API_ENABLED": "1",  # Enable cuDNN v8 optimizations
+                    "CUDA_LAUNCH_BLOCKING": "0",  # Async kernel launches for speed
+
+                    # cuDNN optimizations
+                    "CUDNN_BENCHMARK": "1",  # Auto-tune for best performance
+                    "CUDNN_DETERMINISTIC": "0",  # Allow non-deterministic for speed
+
+                    # TensorFloat-32 for speed (compatible with A100, A6000, etc.)
+                    "TORCH_ALLOW_TF32_CUBLAS_OVERRIDE": "1",
+                    "TORCH_ALLOW_TF32": "1",
+
+                    # Disable CPU fallback to force GPU usage
+                    "CUDA_VISIBLE_DEVICES": "0",  # Use first GPU
+
+                    # Memory optimization
+                    "PYTORCH_NO_CUDA_MEMORY_CACHING": "0",  # Enable caching for speed
+                }
+                env.update(perf_env)
+
+                # Run generation in subprocess with performance optimizations
                 process = await asyncio.create_subprocess_exec(
                     *cmd,
                     cwd=str(self.opensora_path),
                     stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE
+                    stderr=asyncio.subprocess.PIPE,
+                    env=env
                 )
 
                 # Stream output
