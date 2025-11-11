@@ -22,12 +22,14 @@ echo "✓ Backup created"
 
 # Fix all paths - use correct OpenSora-STDiT-v3 repo
 sed -i \
-    -e 's|"hpcai-tech/Open-Sora-v2/model"|"hpcai-tech/OpenSora-STDiT-v3"|g' \
-    -e 's|"hpcai-tech/Open-Sora-v2/hunyuan_vae"|"hpcai-tech/OpenSora-STDiT-v3"|g' \
+    -e 's|"hpcai-tech/Open-Sora-v2/model"|"hpcai-tech/OpenSora-STDiT-v3/tree/main/model.safetensors"|g' \
+    -e 's|"hpcai-tech/OpenSora-STDiT-v3"|"hpcai-tech/OpenSora-STDiT-v3/tree/main/model.safetensors"|g' \
+    -e 's|"hpcai-tech/Open-Sora-v2/hunyuan_vae"|"hpcai-tech/OpenSora-STDiT-v3/hunyuan_vae.safetensors"|g' \
     "$CONFIG_FILE"
 
 echo "✓ Fixed component paths:"
-echo "  - Model/VAE: hpcai-tech/OpenSora-STDiT-v3"
+echo "  - Model: hpcai-tech/OpenSora-STDiT-v3/tree/main/model.safetensors"
+echo "  - VAE: hpcai-tech/OpenSora-STDiT-v3/hunyuan_vae.safetensors"
 echo "  - T5: google/t5-v1_1-xxl"
 echo "  - CLIP: openai/clip-vit-large-patch14"
 echo ""
