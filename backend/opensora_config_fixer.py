@@ -36,7 +36,14 @@ def fix_opensora_config():
             content = re.sub(r'fps_save\s*=\s*[0-9]+', 'fps_save = 8', content)
             fixes_applied.append(f"fps_save: {old_fps} → 8 (match generation FPS)")
 
-        # Fix 2: Optimize motion settings
+        # Fix 2: Ensure aspect_ratio in config is NOT hardcoded
+        # The config should not override command-line aspect_ratio parameter
+        # Check if aspect_ratio is hardcoded in sampling_option
+        aspect_ratio_match = re.search(r'sampling_option\s*=\s*dict\([^}]+aspect_ratio\s*=\s*["\']([^"\']+)["\']', content, re.DOTALL)
+        if aspect_ratio_match:
+            logger.info(f"Config has default aspect_ratio: {aspect_ratio_match.group(1)} (will be overridden by request)")
+
+        # Fix 3: Optimize motion settings
         # Reduce image guidance for more motion freedom
         img_guidance = re.search(r'guidance_img\s*=\s*([0-9.]+)', content)
         if img_guidance and float(img_guidance.group(1)) > 2.0:

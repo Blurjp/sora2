@@ -4,6 +4,7 @@ Open-Sora 2.0 Video Generator Wrapper
 import subprocess
 import asyncio
 import os
+import re
 import logging
 from pathlib import Path
 from typing import Optional, Dict
@@ -249,6 +250,7 @@ class VideoGenerator:
                 logger.info(f"Generated video found: {generated_file.name}")
                 logger.info(f"File size: {file_size_kb:.1f} KB")
                 logger.info(f"Full path: {generated_file}")
+                logger.info(f"Requested aspect ratio: {aspect_ratio}")
 
                 # Check video properties with ffprobe if available
                 try:
@@ -263,6 +265,33 @@ class VideoGenerator:
                     )
                     if probe_result.returncode == 0:
                         logger.info(f"Video properties:\n{probe_result.stdout}")
+
+                        # Check if aspect ratio matches request
+                        width_match = re.search(r'width=(\d+)', probe_result.stdout)
+                        height_match = re.search(r'height=(\d+)', probe_result.stdout)
+                        if width_match and height_match:
+                            actual_width = int(width_match.group(1))
+                            actual_height = int(height_match.group(1))
+                            actual_ratio = actual_width / actual_height
+
+                            # Calculate expected ratio
+                            if aspect_ratio == "16:9":
+                                expected_ratio = 16/9
+                            elif aspect_ratio == "9:16":
+                                expected_ratio = 9/16
+                            elif aspect_ratio == "1:1":
+                                expected_ratio = 1.0
+                            elif aspect_ratio == "2.39:1":
+                                expected_ratio = 2.39
+                            else:
+                                expected_ratio = None
+
+                            if expected_ratio:
+                                ratio_diff = abs(actual_ratio - expected_ratio)
+                                if ratio_diff > 0.1:
+                                    logger.warning(f"Aspect ratio mismatch! Requested: {aspect_ratio} ({expected_ratio:.2f}), Got: {actual_width}x{actual_height} ({actual_ratio:.2f})")
+                                else:
+                                    logger.info(f"✅ Aspect ratio correct: {aspect_ratio}")
                     else:
                         logger.warning(f"Could not probe video: {probe_result.stderr}")
                 except Exception as e:
