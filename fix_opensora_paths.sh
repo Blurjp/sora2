@@ -22,16 +22,8 @@ echo "✓ Backup created"
 
 # Fix all paths - use correct OpenSora-STDiT-v3 repo
 sed -i \
-    -e 's|from_pretrained="hpcai-tech/Open-Sora-v2/model"|from_pretrained="hpcai-tech/OpenSora-STDiT-v3/model.safetensors"|g' \
-    -e 's|from_pretrained="hpcai-tech/Open-Sora-v2/hunyuan_vae"|from_pretrained="hpcai-tech/OpenSora-STDiT-v3/hunyuan_vae.safetensors"|g' \
-    -e 's|from_pretrained="google/t5-v1_1-xxl"|from_pretrained="google/t5-v1_1-xxl"|g' \
-    -e 's|from_pretrained="openai/clip-vit-large-patch14"|from_pretrained="openai/clip-vit-large-patch14"|g' \
-    -e "s|from_pretrained.*=.*['\"]\\./ckpts/hunyuan_vae\\.safetensors['\"]|from_pretrained=\"hpcai-tech/OpenSora-STDiT-v3/hunyuan_vae.safetensors\"|g" \
-    -e "s|from_pretrained.*=.*['\"]\\./ckpts/google/t5-v1_1-xxl['\"]|from_pretrained=\"google/t5-v1_1-xxl\"|g" \
-    -e "s|from_pretrained.*=.*['\"]\\./ckpts/openai/clip-vit-large-patch14['\"]|from_pretrained=\"openai/clip-vit-large-patch14\"|g" \
-    -e "s|from_pretrained.*=.*['\"]\\./ckpts/Open_Sora_v2\\.safetensors['\"]|from_pretrained=\"hpcai-tech/OpenSora-STDiT-v3/model.safetensors\"|g" \
-    -e "s|from_pretrained[[:space:]]*=[[:space:]]*['\"]hpcai-tech/Open-Sora-v2[^'\"]*['\"][[:space:]]*,[[:space:]]*subfolder[[:space:]]*=[[:space:]]*['\"]hunyuan_vae['\"]|from_pretrained=\"hpcai-tech/OpenSora-STDiT-v3/hunyuan_vae.safetensors\"|g" \
-    -e "s|from_pretrained[[:space:]]*=[[:space:]]*['\"]hpcai-tech/Open-Sora-v2[^'\"]*['\"][[:space:]]*,[[:space:]]*subfolder[[:space:]]*=[[:space:]]*['\"]model['\"]|from_pretrained=\"hpcai-tech/OpenSora-STDiT-v3/model.safetensors\"|g" \
+    -e 's|"hpcai-tech/Open-Sora-v2/model"|"hpcai-tech/OpenSora-STDiT-v3/model.safetensors"|g' \
+    -e 's|"hpcai-tech/Open-Sora-v2/hunyuan_vae"|"hpcai-tech/OpenSora-STDiT-v3/hunyuan_vae.safetensors"|g' \
     "$CONFIG_FILE"
 
 echo "✓ Fixed component paths:"
