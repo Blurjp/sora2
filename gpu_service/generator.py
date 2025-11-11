@@ -17,6 +17,7 @@ from .config import (
     TEMP_DIR,
     FRAMES_PER_SECOND,
     MODEL_CONFIG_PATH,
+    CHECKPOINT_PATH,
 )
 
 logger = logging.getLogger(__name__)
@@ -164,16 +165,14 @@ class VideoGenerator:
                 # Prepare output path
                 output_path = OUTPUT_DIR / f"{video_id}.mp4"
 
-                # Opportunistically patch the Open-Sora config to reduce VRAM
-                self._patch_opensora_memory(MODEL_CONFIG_PATH)
-
-                # Build command
+                # Build command for STDiT v3
                 cmd = [
                     "torchrun",
                     "--nproc_per_node", "1",
                     "--standalone",
                     "scripts/diffusion/inference.py",
                     MODEL_CONFIG_PATH,
+                    "--ckpt", CHECKPOINT_PATH,  # STDiT v3 requires explicit checkpoint
                     "--cond_type", "i2v_head",
                     "--ref", str(image_path),
                     "--prompt", prompt,
