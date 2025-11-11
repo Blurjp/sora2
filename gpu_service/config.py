@@ -24,15 +24,15 @@ PORT = int(os.environ.get("PORT", "8001"))
 FRAMES_PER_SECOND = 8
 
 # Advanced generation parameters (can be overridden per request)
-DEFAULT_NUM_STEPS = 100  # Diffusion steps (more = better quality but slower)
+DEFAULT_NUM_STEPS = 120  # Diffusion steps (more = better quality but slower) - HIGH QUALITY
 MIN_NUM_STEPS = 20
 MAX_NUM_STEPS = 150
 
-DEFAULT_GUIDANCE = 10.0  # Text guidance strength (higher = follows prompt more)
+DEFAULT_GUIDANCE = 12.0  # Text guidance strength (higher = follows prompt more) - STRONG adherence
 MIN_GUIDANCE = 1.0
 MAX_GUIDANCE = 20.0
 
-DEFAULT_GUIDANCE_IMG = 2.5  # Image guidance - BALANCED for face preservation
+DEFAULT_GUIDANCE_IMG = 3.5  # Image guidance - HIGHER for better face preservation
 MIN_GUIDANCE_IMG = 0.5
 MAX_GUIDANCE_IMG = 5.0
 

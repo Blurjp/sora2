@@ -44,26 +44,26 @@ def fix_opensora_config():
             logger.info(f"Config has default aspect_ratio: {aspect_ratio_match.group(1)} (will be overridden by request)")
 
         # Fix 3: HIGH QUALITY optimization for faces and details
-        # Image guidance balanced for face preservation
+        # Image guidance HIGHER for better face preservation
         img_guidance = re.search(r'guidance_img\s*=\s*([0-9.]+)', content)
-        if img_guidance and float(img_guidance.group(1)) != 2.5:
+        if img_guidance and float(img_guidance.group(1)) != 3.5:
             old_val = img_guidance.group(1)
-            content = re.sub(r'guidance_img\s*=\s*[0-9.]+', 'guidance_img=2.5', content)
-            fixes_applied.append(f"guidance_img: {old_val} → 2.5 (preserve face structure)")
+            content = re.sub(r'guidance_img\s*=\s*[0-9.]+', 'guidance_img=3.5', content)
+            fixes_applied.append(f"guidance_img: {old_val} → 3.5 (STRONG face preservation)")
 
-        # Strong text guidance for prompt following
+        # VERY strong text guidance for prompt following
         text_guidance = re.search(r'(?<!_)guidance\s*=\s*([0-9.]+)', content)
-        if text_guidance and float(text_guidance.group(1)) != 10.0:
+        if text_guidance and float(text_guidance.group(1)) != 12.0:
             old_val = text_guidance.group(1)
-            content = re.sub(r'(?<!_)guidance\s*=\s*[0-9.]+', 'guidance=10.0', content)
-            fixes_applied.append(f"guidance: {old_val} → 10.0 (strong prompt adherence)")
+            content = re.sub(r'(?<!_)guidance\s*=\s*[0-9.]+', 'guidance=12.0', content)
+            fixes_applied.append(f"guidance: {old_val} → 12.0 (VERY strong prompt adherence)")
 
         # INCREASE diffusion steps significantly for better quality
         num_steps = re.search(r'num_steps\s*=\s*([0-9]+)', content)
-        if num_steps and int(num_steps.group(1)) < 100:
+        if num_steps and int(num_steps.group(1)) < 120:
             old_val = num_steps.group(1)
-            content = re.sub(r'num_steps\s*=\s*[0-9]+', 'num_steps=100', content)
-            fixes_applied.append(f"num_steps: {old_val} → 100 (HIGH quality)")
+            content = re.sub(r'num_steps\s*=\s*[0-9]+', 'num_steps=120', content)
+            fixes_applied.append(f"num_steps: {old_val} → 120 (MAXIMUM quality)")
 
         # Disable VAE tiling - can cause face distortion
         if 'use_spatial_tiling' in content:

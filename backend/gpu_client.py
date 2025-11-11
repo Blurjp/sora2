@@ -73,9 +73,9 @@ class GPUClient:
         duration: int = 15,
         aspect_ratio: str = "16:9",
         motion_score: float = 0.5,
-        num_steps: int = 100,
-        guidance: float = 10.0,
-        guidance_img: float = 2.5,
+        num_steps: int = 120,
+        guidance: float = 12.0,
+        guidance_img: float = 3.5,
         seed: Optional[int] = None,
         refine_prompt: bool = False
     ) -> Dict:
