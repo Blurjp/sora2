@@ -229,6 +229,30 @@ class VideoGenerator:
                 # Get the generated file (should only be one in this directory)
                 generated_file = generated_files[0]
 
+                # Log video file properties
+                file_size_kb = generated_file.stat().st_size / 1024
+                logger.info(f"Generated video found: {generated_file.name}")
+                logger.info(f"File size: {file_size_kb:.1f} KB")
+                logger.info(f"Full path: {generated_file}")
+
+                # Check video properties with ffprobe if available
+                try:
+                    import subprocess
+                    probe_result = subprocess.run(
+                        ["ffprobe", "-v", "error", "-show_entries",
+                         "format=duration:stream=width,height,nb_frames",
+                         "-of", "default=noprint_wrappers=1", str(generated_file)],
+                        capture_output=True,
+                        text=True,
+                        timeout=5
+                    )
+                    if probe_result.returncode == 0:
+                        logger.info(f"Video properties:\n{probe_result.stdout}")
+                    else:
+                        logger.warning(f"Could not probe video: {probe_result.stderr}")
+                except Exception as e:
+                    logger.debug(f"ffprobe not available or failed: {e}")
+
                 # Move to final output location
                 generated_file.rename(output_path)
 
