@@ -211,8 +211,8 @@ class VideoGenerator:
                 if stderr_text:
                     logger.debug(f"Generation stderr (truncated): {stderr_text[-1000:]}")
 
-                # Find generated video file in job-specific directory
-                generated_files = list(job_output_dir.glob("*.mp4"))
+                # Find generated video file in job-specific directory (search recursively)
+                generated_files = list(job_output_dir.glob("**/*.mp4"))
                 if not generated_files:
                     # Log directory contents for debugging
                     all_files = list(job_output_dir.glob("*"))
