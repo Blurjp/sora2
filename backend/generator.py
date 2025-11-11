@@ -47,6 +47,33 @@ class VideoGenerator:
         # Ensure within limits
         return min(frames, 125)  # Max 125 (4*31+1)
 
+    def _enhance_prompt_for_quality(self, prompt: str) -> str:
+        """
+        Enhance prompt for better quality and face preservation
+        Adds quality-improving keywords if not already present
+        """
+        prompt_lower = prompt.lower()
+        enhancements = []
+
+        # Add quality keywords if not present
+        quality_keywords = ['high quality', 'detailed', 'sharp', 'clear', '4k', '8k', 'hd']
+        if not any(kw in prompt_lower for kw in quality_keywords):
+            enhancements.append("high quality")
+
+        # Add face preservation keywords if face/person detected
+        face_keywords = ['face', 'person', 'she', 'he', 'woman', 'man', 'girl', 'boy', 'people']
+        if any(kw in prompt_lower for kw in face_keywords):
+            if 'detailed face' not in prompt_lower and 'clear face' not in prompt_lower:
+                enhancements.append("detailed facial features")
+
+        # Add smooth motion keyword for video quality
+        if 'smooth' not in prompt_lower and 'fluid' not in prompt_lower:
+            enhancements.append("smooth motion")
+
+        if enhancements:
+            return f"{prompt}, {', '.join(enhancements)}"
+        return prompt
+
     def is_processing(self) -> bool:
         """Return True while a torchrun task is still running."""
         task = self._current_task
@@ -128,11 +155,16 @@ class VideoGenerator:
         # Acquire lock to prevent concurrent generations
         async with self._generation_lock:
             try:
+                # Enhance prompt for better quality and face preservation
+                enhanced_prompt = self._enhance_prompt_for_quality(prompt)
+                if enhanced_prompt != prompt:
+                    logger.info(f"Enhanced prompt for quality: {enhanced_prompt}")
+
                 # Log generation parameters
                 logger.info(f"=== Starting video generation: {video_id} ===")
                 logger.info(f"Parameters:")
                 logger.info(f"  - Image: {image_path}")
-                logger.info(f"  - Prompt: {prompt}")
+                logger.info(f"  - Prompt: {enhanced_prompt}")
                 logger.info(f"  - Duration: {duration}s")
                 logger.info(f"  - Aspect ratio: {aspect_ratio}")
                 logger.info(f"  - Motion score: {motion_score}")
@@ -181,7 +213,7 @@ class VideoGenerator:
                     str(temp_config_path),
                     "--cond_type", "i2v_head",
                     "--ref", str(image_path),
-                    "--prompt", prompt,
+                    "--prompt", enhanced_prompt,  # Use enhanced prompt
                     "--num_frames", str(num_frames),
                     "--aspect_ratio", aspect_ratio,
                     "--motion-score", str(motion_score),

@@ -38,7 +38,7 @@ FRAMES_PER_SECOND = 8
 ASPECT_RATIOS = ["16:9", "9:16", "1:1", "2.39:1"]
 
 # Advanced generation parameters (can be overridden per request)
-DEFAULT_NUM_STEPS = 75  # Diffusion steps (more = better quality but slower)
+DEFAULT_NUM_STEPS = 100  # Diffusion steps (more = better quality but slower) - INCREASED for quality
 MIN_NUM_STEPS = 20
 MAX_NUM_STEPS = 150
 
@@ -46,7 +46,7 @@ DEFAULT_GUIDANCE = 10.0  # Text guidance strength (higher = follows prompt more)
 MIN_GUIDANCE = 1.0
 MAX_GUIDANCE = 20.0
 
-DEFAULT_GUIDANCE_IMG = 1.5  # Image guidance (lower = more freedom from reference)
+DEFAULT_GUIDANCE_IMG = 2.5  # Image guidance - BALANCED for face preservation
 MIN_GUIDANCE_IMG = 0.5
 MAX_GUIDANCE_IMG = 5.0
 
