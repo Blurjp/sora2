@@ -153,6 +153,21 @@ The script automatically optimizes for **MAXIMUM quality**:
 
 ## 🐛 Troubleshooting
 
+### Error: ModuleNotFoundError: No module named 'tensornvme'
+
+**Fix:** Run the patch script:
+```bash
+cd ~/sora2
+./fix_tensornvme.sh
+```
+
+This makes the tensornvme import optional (it's not required for most GPUs).
+
+Then restart:
+```bash
+sudo systemctl restart opensora-gpu
+```
+
 ### Check service status:
 ```bash
 sudo systemctl status opensora-gpu

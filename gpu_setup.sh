@@ -82,6 +82,16 @@ pip install -v . -q
 pip install xformers==0.0.27.post2 --index-url https://download.pytorch.org/whl/cu121 -q
 pip install flash-attn --no-build-isolation -q
 
+# Patch Open-Sora to make tensornvme optional (not required for most GPUs)
+echo -e "${YELLOW}Patching Open-Sora to make tensornvme optional...${NC}"
+cd "$PROJECT_DIR"
+if python3 patch_opensora_tensornvme.py; then
+    echo -e "${GREEN}✅ Open-Sora patched successfully${NC}"
+else
+    echo -e "${YELLOW}⚠️  Warning: Patch failed, but continuing...${NC}"
+fi
+cd "$OPENSORA_PATH"
+
 echo -e "${GREEN}✅ Open-Sora installed at $OPENSORA_PATH${NC}"
 echo ""
 
