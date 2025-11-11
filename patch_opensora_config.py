@@ -3,7 +3,7 @@
 Patch Open-Sora inference configs to use correct HuggingFace paths for each component.
 
 This fixes the "Missing key(s) in state_dict" error by ensuring:
-- Model (flux): hpcai-tech/Open-Sora-v2/Open_Sora_v2.safetensors
+- Model (flux): hpcai-tech/OpenSora-STDiT-v3/model.safetensors
 - VAE (hunyuan): hpcai-tech/Open-Sora-v2/hunyuan_vae.safetensors
 - T5 text encoder: google/t5-v1_1-xxl
 - CLIP text encoder: openai/clip-vit-large-patch14
@@ -70,7 +70,7 @@ def patch_config_file(file_path):
         if re.search(main_model_pattern, content):
             content = re.sub(
                 main_model_pattern,
-                '"hpcai-tech/Open-Sora-v2/Open_Sora_v2.safetensors"',
+                '"hpcai-tech/OpenSora-STDiT-v3/model.safetensors"',
                 content
             )
             changes.append("main model checkpoint")
@@ -149,13 +149,13 @@ def patch_config_file(file_path):
                 )
                 changes.append(f"CLIP encoder ({current_clip} → openai/clip-vit-large-patch14)")
 
-        # 5. Generic fallback: Replace ANY remaining hpcai-tech/Open-Sora-v2/Open_Sora_v2.safetensors
+        # 5. Generic fallback: Replace ANY remaining hpcai-tech/OpenSora-STDiT-v3/model.safetensors
         # that appears in from_pretrained (shouldn't be there for text encoders)
-        generic_pattern = r'(from_pretrained\s*=\s*)["\'](hpcai-tech/Open-Sora-v2/Open_Sora_v2\.safetensors)["\']'
+        generic_pattern = r'(from_pretrained\s*=\s*)["\'](hpcai-tech/OpenSora-STDiT-v3/model\.safetensors)["\']'
         remaining = re.findall(generic_pattern, content)
         if remaining:
             # This is a safety catch - these should have been caught by specific patterns
-            print(f"  ⚠ Warning: Found {len(remaining)} generic Open_Sora_v2 references")
+            print(f"  ⚠ Warning: Found {len(remaining)} generic OpenSora-STDiT-v3 references")
             print(f"    Manual review recommended for: {file_path}")
 
         if content != original:
@@ -181,7 +181,7 @@ def verify_hf_downloads():
         from huggingface_hub import hf_hub_download
 
         models = [
-            ("hpcai-tech/Open-Sora-v2", "Open_Sora_v2.safetensors", "Main model"),
+            ("hpcai-tech/OpenSora-STDiT-v3", "model.safetensors", "Main model"),
             ("hpcai-tech/Open-Sora-v2", "hunyuan_vae.safetensors", "VAE"),
         ]
 
@@ -206,7 +206,7 @@ def main():
     print("  - VAE: hunyuan_vae.safetensors")
     print("  - T5: google/t5-v1_1-xxl")
     print("  - CLIP: openai/clip-vit-large-patch14")
-    print("  - Model: Open_Sora_v2.safetensors")
+    print("  - Model: OpenSora-STDiT-v3/model.safetensors")
     print()
 
     # Find config directory

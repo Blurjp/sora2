@@ -67,7 +67,7 @@ def patch_file(path: Path, checkpoint: str) -> bool:
     model_pattern = r'from_pretrained\s*=\s*["\']\.\/ckpts\/Open_Sora_v2\.safetensors["\']'
     if re.search(model_pattern, text):
         text = re.sub(model_pattern,
-                     'from_pretrained="hpcai-tech/Open-Sora-v2/model"',
+                     'from_pretrained="hpcai-tech/OpenSora-STDiT-v3/model.safetensors"',
                      text)
         changes_made.append("Model")
 
@@ -88,7 +88,7 @@ def patch_file(path: Path, checkpoint: str) -> bool:
 
     old_model_subfolder = r'from_pretrained\s*=\s*["\']hpcai-tech/Open-Sora-v2[^"\']*["\']\s*,\s*subfolder\s*=\s*["\']model["\']'
     if re.search(old_model_subfolder, text):
-        text = re.sub(old_model_subfolder, 'from_pretrained="hpcai-tech/Open-Sora-v2/model"', text)
+        text = re.sub(old_model_subfolder, 'from_pretrained="hpcai-tech/OpenSora-STDiT-v3/model.safetensors"', text)
         if "Model" not in changes_made:
             changes_made.append("Model (old subfolder)")
 
@@ -121,7 +121,7 @@ def main() -> None:
 
     checkpoint = os.environ.get(
         "CHECKPOINT_PATH",
-        "hpcai-tech/Open-Sora-v2/Open_Sora_v2.safetensors",
+        "hpcai-tech/OpenSora-STDiT-v3/model.safetensors",
     )
     print(f"Config dir: {cfg_dir}")
     print(f"Checkpoint: {checkpoint}")

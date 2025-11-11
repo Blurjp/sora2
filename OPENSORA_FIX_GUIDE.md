@@ -12,13 +12,13 @@ Missing key(s) in state_dict for AutoencoderKLCausal3D
 Open-Sora inference configs point **all components** (model, VAE, T5, CLIP) to the same checkpoint file. This causes the VAE to try loading from the main model weights, which have different keys.
 
 **Incorrect (current):**
-- Model: `hpcai-tech/Open-Sora-v2/Open_Sora_v2.safetensors`
-- VAE: `hpcai-tech/Open-Sora-v2/Open_Sora_v2.safetensors` ❌ **WRONG!**
-- T5: `hpcai-tech/Open-Sora-v2/Open_Sora_v2.safetensors` ❌ **WRONG!**
-- CLIP: `hpcai-tech/Open-Sora-v2/Open_Sora_v2.safetensors` ❌ **WRONG!**
+- Model: `hpcai-tech/OpenSora-STDiT-v3/model.safetensors`
+- VAE: `hpcai-tech/OpenSora-STDiT-v3/model.safetensors` ❌ **WRONG!**
+- T5: `hpcai-tech/OpenSora-STDiT-v3/model.safetensors` ❌ **WRONG!**
+- CLIP: `hpcai-tech/OpenSora-STDiT-v3/model.safetensors` ❌ **WRONG!**
 
 **Correct:**
-- Model: `hpcai-tech/Open-Sora-v2/Open_Sora_v2.safetensors` ✅
+- Model: `hpcai-tech/OpenSora-STDiT-v3/model.safetensors` ✅
 - VAE: `hpcai-tech/Open-Sora-v2/hunyuan_vae.safetensors` ✅
 - T5: `google/t5-v1_1-xxl` ✅
 - CLIP: `openai/clip-vit-large-patch14` ✅
@@ -67,7 +67,7 @@ python3 patch_opensora_config.py
 # Check that models can be downloaded
 python3 - <<'PY'
 from huggingface_hub import hf_hub_download as d
-print('Model:', d('hpcai-tech/Open-Sora-v2','Open_Sora_v2.safetensors'))
+print('Model:', d('hpcai-tech/OpenSora-STDiT-v3','model.safetensors'))
 print('VAE  :', d('hpcai-tech/Open-Sora-v2','hunyuan_vae.safetensors'))
 PY
 ```
@@ -97,7 +97,7 @@ The `patch_opensora_config.py` script:
    - VAE: `hunyuan_vae.safetensors`
    - T5: `google/t5-v1_1-xxl`
    - CLIP: `openai/clip-vit-large-patch14`
-4. **Preserves** main model path: `Open_Sora_v2.safetensors`
+4. **Sets** main model path to `hpcai-tech/OpenSora-STDiT-v3/model.safetensors`
 
 ## Manual Verification
 
@@ -246,9 +246,12 @@ cp 768px.py.backup 768px.py
 
 | Component | Wrong Path | Correct Path |
 |-----------|-----------|--------------|
-| Model | ✅ Open_Sora_v2.safetensors | ✅ Open_Sora_v2.safetensors |
+| Model | ❌ Open_Sora_v2.safetensors | ✅ OpenSora-STDiT-v3/model.safetensors |
 | VAE | ❌ Open_Sora_v2.safetensors | ✅ hunyuan_vae.safetensors |
 | T5 | ❌ Open_Sora_v2.safetensors | ✅ google/t5-v1_1-xxl |
 | CLIP | ❌ Open_Sora_v2.safetensors | ✅ openai/clip-vit-large-patch14 |
 
 Run `python3 patch_opensora_config.py` to fix all paths automatically!
+
+
+
