@@ -79,13 +79,14 @@ def patch_file(path: Path, checkpoint: str) -> bool:
             changes_made.append("generic paths")
 
     # Pattern 6: Fix old subfolder format from previous patches
-    old_vae_subfolder = r'from_pretrained\s*=\s*["\']hpcai-tech/Open-Sora-v2["\']\s*,\s*subfolder\s*=\s*["\']hunyuan_vae["\']'
+    # Match both with and without the filename in the path
+    old_vae_subfolder = r'from_pretrained\s*=\s*["\']hpcai-tech/Open-Sora-v2[^"\']*["\']\s*,\s*subfolder\s*=\s*["\']hunyuan_vae["\']'
     if re.search(old_vae_subfolder, text):
         text = re.sub(old_vae_subfolder, 'from_pretrained="hpcai-tech/Open-Sora-v2/hunyuan_vae"', text)
         if "VAE" not in changes_made:
             changes_made.append("VAE (old subfolder)")
 
-    old_model_subfolder = r'from_pretrained\s*=\s*["\']hpcai-tech/Open-Sora-v2["\']\s*,\s*subfolder\s*=\s*["\']model["\']'
+    old_model_subfolder = r'from_pretrained\s*=\s*["\']hpcai-tech/Open-Sora-v2[^"\']*["\']\s*,\s*subfolder\s*=\s*["\']model["\']'
     if re.search(old_model_subfolder, text):
         text = re.sub(old_model_subfolder, 'from_pretrained="hpcai-tech/Open-Sora-v2/model"', text)
         if "Model" not in changes_made:
