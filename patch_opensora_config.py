@@ -3,7 +3,7 @@
 Patch Open-Sora inference configs to use correct HuggingFace paths for each component.
 
 This fixes the "Missing key(s) in state_dict" error by ensuring:
-- Model: hpcai-tech/OpenSora-STDiT-v3/model.safetensors
+- Model: hpcai-tech/OpenSora-STDiT-v3/tree/main/model.safetensors
 - VAE: hpcai-tech/OpenSora-STDiT-v3/hunyuan_vae.safetensors
 - T5 text encoder: google/t5-v1_1-xxl
 - CLIP text encoder: openai/clip-vit-large-patch14
@@ -70,7 +70,7 @@ def patch_config_file(file_path):
         if re.search(main_model_pattern, content):
             content = re.sub(
                 main_model_pattern,
-                '"hpcai-tech/OpenSora-STDiT-v3/model.safetensors"',
+                '"hpcai-tech/OpenSora-STDiT-v3/tree/main/model.safetensors"',
                 content
             )
             changes.append("main model checkpoint")
@@ -149,7 +149,7 @@ def patch_config_file(file_path):
                 )
                 changes.append(f"CLIP encoder ({current_clip} → openai/clip-vit-large-patch14)")
 
-        # 5. Generic fallback: Replace ANY remaining hpcai-tech/OpenSora-STDiT-v3/model.safetensors
+        # 5. Generic fallback: Replace ANY remaining hpcai-tech/OpenSora-STDiT-v3/tree/main/model.safetensors
         # that appears in from_pretrained (shouldn't be there for text encoders)
         generic_pattern = r'(from_pretrained\s*=\s*)["\'](hpcai-tech/OpenSora-STDiT-v3/model\.safetensors)["\']'
         remaining = re.findall(generic_pattern, content)
@@ -206,7 +206,7 @@ def main():
     print("  - VAE: hpcai-tech/OpenSora-STDiT-v3/hunyuan_vae.safetensors")
     print("  - T5: google/t5-v1_1-xxl")
     print("  - CLIP: openai/clip-vit-large-patch14")
-    print("  - Model: hpcai-tech/OpenSora-STDiT-v3/model.safetensors")
+    print("  - Model: hpcai-tech/OpenSora-STDiT-v3/tree/main/model.safetensors")
     print()
 
     # Find config directory
