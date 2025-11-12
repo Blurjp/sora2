@@ -232,7 +232,7 @@ fi
 
 echo "Patching Open-Sora config to use Hugging Face checkpoint..."
 export OPENSORA_PATH="$OPENSORA_PATH"
-export CHECKPOINT_PATH="${CHECKPOINT_PATH:-hpcai-tech/OpenSora-STDiT-v3/model.safetensors}"
+export CHECKPOINT_PATH="${CHECKPOINT_PATH:-hpcai-tech/Open-Sora-v2/Open_Sora_v2.safetensors}"
 python3 "$PROJECT_PATH/hf_patch_opensora_config.py"
 if [ $? -eq 0 ]; then
     print_success "Open-Sora config patched for automatic model download"
