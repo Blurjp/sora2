@@ -116,27 +116,47 @@
                         </div>
                     </div>
 
+                    <!-- Quality Preset Selector -->
+                    <div class="form-group">
+                        <label for="qualityPresetInput">
+                            <strong>🎨 Quality Preset</strong>
+                            <span class="tooltip">ℹ️
+                                <span class="tooltiptext">Choose quality level - affects generation time</span>
+                            </span>
+                        </label>
+                        <select id="qualityPresetInput">
+                            <option value="fast">⚡ Fast (50 steps, ~1-2 min)</option>
+                            <option value="balanced">⚖️ Balanced (100 steps, ~2-3 min)</option>
+                            <option value="high" selected>✨ High Quality (120 steps, ~3-4 min) - Recommended</option>
+                            <option value="maximum">🔥 Maximum (150 steps, ~4-5 min)</option>
+                            <option value="ultra">💎 Ultra (200 steps, ~5-7 min)</option>
+                            <option value="custom">⚙️ Custom Settings</option>
+                        </select>
+                        <p class="hint">💡 Higher quality takes longer but produces better results</p>
+                    </div>
+
                     <!-- Advanced Quality Settings -->
-                    <details class="advanced-settings">
-                        <summary><strong>⚙️ Advanced Quality Settings</strong></summary>
+                    <details class="advanced-settings" id="advancedSettings">
+                        <summary><strong>⚙️ Fine-Tune Quality Settings</strong></summary>
                         <div class="settings-grid">
                             <div class="form-group">
                                 <label for="numStepsInput">
                                     <strong>Quality Steps</strong>
                                     <span class="tooltip">ℹ️
-                                        <span class="tooltiptext">More steps = better quality but slower (20-150)</span>
+                                        <span class="tooltiptext">More steps = better quality but slower (20-200)</span>
                                     </span>
                                 </label>
                                 <input
                                     type="range"
                                     id="numStepsInput"
                                     min="20"
-                                    max="150"
+                                    max="200"
                                     step="5"
                                     value="120"
                                 >
                                 <div class="range-value">
                                     <span id="numStepsValue">120</span> steps
+                                    <span class="quality-indicator" id="stepsIndicator">High</span>
                                 </div>
                             </div>
 
@@ -157,6 +177,7 @@
                                 >
                                 <div class="range-value">
                                     <span id="guidanceValue">12.0</span>
+                                    <span class="quality-indicator" id="guidanceIndicator">Strong</span>
                                 </div>
                             </div>
 
@@ -164,23 +185,24 @@
                                 <label for="guidanceImgInput">
                                     <strong>Image Influence</strong>
                                     <span class="tooltip">ℹ️
-                                        <span class="tooltiptext">Higher = stays closer to reference image (0.5-5)</span>
+                                        <span class="tooltiptext">Higher = stays closer to reference image (0.5-10)</span>
                                     </span>
                                 </label>
                                 <input
                                     type="range"
                                     id="guidanceImgInput"
                                     min="0.5"
-                                    max="5"
+                                    max="10"
                                     step="0.5"
                                     value="3.5"
                                 >
                                 <div class="range-value">
                                     <span id="guidanceImgValue">3.5</span>
+                                    <span class="quality-indicator" id="imgIndicator">Strong</span>
                                 </div>
                             </div>
                         </div>
-                        <p class="hint">💡 Default values are optimized for face quality and prompt following</p>
+                        <p class="hint">💡 Current settings are optimized for face quality and prompt following</p>
                     </details>
 
                     <!-- Advanced Options -->

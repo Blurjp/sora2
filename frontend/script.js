@@ -103,18 +103,124 @@ const guidanceInput = document.getElementById('guidanceInput');
 const guidanceValue = document.getElementById('guidanceValue');
 const guidanceImgInput = document.getElementById('guidanceImgInput');
 const guidanceImgValue = document.getElementById('guidanceImgValue');
+const qualityPresetInput = document.getElementById('qualityPresetInput');
+const advancedSettings = document.getElementById('advancedSettings');
 
+// Quality indicators
+const stepsIndicator = document.getElementById('stepsIndicator');
+const guidanceIndicator = document.getElementById('guidanceIndicator');
+const imgIndicator = document.getElementById('imgIndicator');
+
+// Quality presets
+const qualityPresets = {
+    fast: { steps: 50, guidance: 7.0, guidanceImg: 2.0 },
+    balanced: { steps: 100, guidance: 10.0, guidanceImg: 3.0 },
+    high: { steps: 120, guidance: 12.0, guidanceImg: 3.5 },
+    maximum: { steps: 150, guidance: 15.0, guidanceImg: 4.5 },
+    ultra: { steps: 200, guidance: 18.0, guidanceImg: 6.0 }
+};
+
+// Update quality indicators
+function updateQualityIndicators() {
+    // Steps indicator
+    const steps = parseInt(numStepsInput.value);
+    if (steps < 75) {
+        stepsIndicator.textContent = 'Fast';
+        stepsIndicator.style.color = '#48bb78';
+    } else if (steps < 110) {
+        stepsIndicator.textContent = 'Balanced';
+        stepsIndicator.style.color = '#4299e1';
+    } else if (steps < 135) {
+        stepsIndicator.textContent = 'High';
+        stepsIndicator.style.color = '#9f7aea';
+    } else if (steps < 175) {
+        stepsIndicator.textContent = 'Maximum';
+        stepsIndicator.style.color = '#ed8936';
+    } else {
+        stepsIndicator.textContent = 'Ultra';
+        stepsIndicator.style.color = '#f56565';
+    }
+
+    // Guidance indicator
+    const guidance = parseFloat(guidanceInput.value);
+    if (guidance < 8) {
+        guidanceIndicator.textContent = 'Weak';
+    } else if (guidance < 13) {
+        guidanceIndicator.textContent = 'Strong';
+    } else {
+        guidanceIndicator.textContent = 'Very Strong';
+    }
+
+    // Image influence indicator
+    const imgGuidance = parseFloat(guidanceImgInput.value);
+    if (imgGuidance < 2.5) {
+        imgIndicator.textContent = 'Low';
+    } else if (imgGuidance < 4.5) {
+        imgIndicator.textContent = 'Strong';
+    } else {
+        imgIndicator.textContent = 'Maximum';
+    }
+}
+
+// Quality preset selection
+qualityPresetInput.addEventListener('change', () => {
+    const preset = qualityPresetInput.value;
+
+    if (preset === 'custom') {
+        // Open advanced settings
+        advancedSettings.open = true;
+        return;
+    }
+
+    const settings = qualityPresets[preset];
+    if (settings) {
+        numStepsInput.value = settings.steps;
+        guidanceInput.value = settings.guidance;
+        guidanceImgInput.value = settings.guidanceImg;
+
+        // Update displayed values
+        numStepsValue.textContent = settings.steps;
+        guidanceValue.textContent = settings.guidance.toFixed(1);
+        guidanceImgValue.textContent = settings.guidanceImg.toFixed(1);
+
+        // Update indicators
+        updateQualityIndicators();
+    }
+});
+
+// Update slider values and indicators
 numStepsInput.addEventListener('input', () => {
     numStepsValue.textContent = numStepsInput.value;
+    updateQualityIndicators();
+
+    // If user manually adjusts, switch to custom
+    if (qualityPresetInput.value !== 'custom') {
+        qualityPresetInput.value = 'custom';
+    }
 });
 
 guidanceInput.addEventListener('input', () => {
     guidanceValue.textContent = parseFloat(guidanceInput.value).toFixed(1);
+    updateQualityIndicators();
+
+    // If user manually adjusts, switch to custom
+    if (qualityPresetInput.value !== 'custom') {
+        qualityPresetInput.value = 'custom';
+    }
 });
 
 guidanceImgInput.addEventListener('input', () => {
     guidanceImgValue.textContent = parseFloat(guidanceImgInput.value).toFixed(1);
+    updateQualityIndicators();
+
+    // If user manually adjusts, switch to custom
+    if (qualityPresetInput.value !== 'custom') {
+        qualityPresetInput.value = 'custom';
+    }
 });
+
+// Initialize indicators on page load
+updateQualityIndicators();
 
 // Form submission
 videoForm.addEventListener('submit', async (e) => {
