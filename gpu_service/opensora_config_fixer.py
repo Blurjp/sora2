@@ -14,12 +14,18 @@ def fix_opensora_config():
     Automatically fix common Open-Sora configuration issues
     - FPS mismatch (fps_save should match generation FPS)
     - Motion settings optimization
+
+    Dynamically uses MODEL_RESOLUTION from environment to fix the correct config file
     """
     opensora_path = os.environ.get("OPENSORA_PATH", os.path.expanduser("~/Open-Sora"))
-    config_file = Path(opensora_path) / "configs/diffusion/inference/256px.py"
+
+    # Get model resolution from environment (defaults to 256px for backwards compatibility)
+    model_resolution = os.environ.get("MODEL_RESOLUTION", "256px")
+    config_file = Path(opensora_path) / f"configs/diffusion/inference/{model_resolution}.py"
 
     if not config_file.exists():
         logger.warning(f"Open-Sora config not found: {config_file}")
+        logger.info(f"Attempted to fix {model_resolution} config based on MODEL_RESOLUTION env var")
         return False
 
     try:
@@ -93,9 +99,9 @@ def fix_opensora_config():
 
         # Only write if changes were made
         if content != original_content:
-            # Create backup
+            # Create backup with dynamic filename based on resolution
             import time
-            backup_file = config_file.parent / f"256px.py.backup_auto_{int(time.time())}"
+            backup_file = config_file.parent / f"{model_resolution}.py.backup_auto_{int(time.time())}"
             with open(backup_file, 'w') as f:
                 f.write(original_content)
 
