@@ -197,10 +197,18 @@ FRAMES_PER_SECOND = 16  # Smoother motion
 
 ### Step 1: Maximize Current Settings (5 minutes)
 ```bash
-# Edit ~/sora2/.env
+# Option A: Use the automated script (recommended)
+cd ~/sora2
+./enable_max_quality.sh
+
+# Option B: Manual edit of .env file
+# Edit ~/sora2/.env and add:
 DEFAULT_NUM_STEPS=150
 DEFAULT_GUIDANCE=15.0
 DEFAULT_GUIDANCE_IMG=4.5
+
+# IMPORTANT: Restart service for changes to take effect
+sudo systemctl restart opensora-gpu
 ```
 
 ### Step 2: Check for Higher Resolution Config (2 minutes)

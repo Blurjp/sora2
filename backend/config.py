@@ -37,16 +37,16 @@ FRAMES_PER_SECOND = 8
 # Supported aspect ratios
 ASPECT_RATIOS = ["16:9", "9:16", "1:1", "2.39:1"]
 
-# Advanced generation parameters (can be overridden per request)
-DEFAULT_NUM_STEPS = 120  # Diffusion steps (more = better quality but slower) - HIGH QUALITY
+# Advanced generation parameters (can be overridden per request or via .env)
+DEFAULT_NUM_STEPS = int(os.environ.get("DEFAULT_NUM_STEPS", "120"))  # Diffusion steps (more = better quality but slower)
 MIN_NUM_STEPS = 20
 MAX_NUM_STEPS = 300  # Increased for INSANE quality mode
 
-DEFAULT_GUIDANCE = 12.0  # Text guidance strength (higher = follows prompt more) - STRONG adherence
+DEFAULT_GUIDANCE = float(os.environ.get("DEFAULT_GUIDANCE", "12.0"))  # Text guidance strength
 MIN_GUIDANCE = 1.0
 MAX_GUIDANCE = 20.0
 
-DEFAULT_GUIDANCE_IMG = 3.5  # Image guidance - HIGHER for better face preservation
+DEFAULT_GUIDANCE_IMG = float(os.environ.get("DEFAULT_GUIDANCE_IMG", "3.5"))  # Image guidance - face preservation
 MIN_GUIDANCE_IMG = 0.5
 MAX_GUIDANCE_IMG = 10.0  # Increased for maximum image fidelity
 

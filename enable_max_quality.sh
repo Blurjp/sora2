@@ -54,21 +54,26 @@ DEFAULT_GUIDANCE_IMG=4.5      # Maximum face/image preservation
 # ═══════════════════════════════════════════════════════════════════
 EOF
 
-echo -e "${GREEN}✓ Quality settings updated:${NC}"
-echo "  • Diffusion steps: 120 → 150 (25% more)"
-echo "  • Text guidance: 12.0 → 15.0 (stronger)"
-echo "  • Image guidance: 3.5 → 4.5 (stronger)"
+echo -e "${GREEN}✓ Environment variables updated:${NC}"
+echo "  • DEFAULT_NUM_STEPS: 120 → 150 (25% more)"
+echo "  • DEFAULT_GUIDANCE: 12.0 → 15.0 (stronger)"
+echo "  • DEFAULT_GUIDANCE_IMG: 3.5 → 4.5 (stronger)"
 echo ""
 
 # Restart service if running
-echo -e "${YELLOW}Restarting service...${NC}"
+echo -e "${YELLOW}Restarting service to apply changes...${NC}"
+echo -e "${YELLOW}(Services must be restarted to read new .env values)${NC}"
+echo ""
 
 if systemctl is-active --quiet opensora-gpu 2>/dev/null; then
     sudo systemctl restart opensora-gpu
     echo -e "${GREEN}✓ Systemd service restarted${NC}"
+    echo -e "${GREEN}✓ New quality settings are now active!${NC}"
 else
     echo -e "${YELLOW}⚠ Systemd service not running. Start it with:${NC}"
     echo "  sudo systemctl start opensora-gpu"
+    echo ""
+    echo -e "${YELLOW}Or if running manually, restart your process.${NC}"
 fi
 
 echo ""

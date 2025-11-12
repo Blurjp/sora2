@@ -63,6 +63,8 @@ The `gpu_setup.sh` script handles **EVERYTHING** in a single run:
 ### 7. **Environment Setup** ✅
    - Creates `.env` file with all settings
    - Configures paths and quality parameters
+   - Services load quality defaults from .env at startup
+   - Can be changed later with `enable_max_quality.sh`
 
 ### 8. **Systemd Service** ✅
    - Creates `opensora-gpu` systemd service
