@@ -67,7 +67,7 @@ def patch_file(path: Path, checkpoint: str) -> bool:
     model_pattern = r'from_pretrained\s*=\s*["\']\.\/ckpts\/Open_Sora_v2\.safetensors["\']'
     if re.search(model_pattern, text):
         text = re.sub(model_pattern,
-                     'from_pretrained="hpcai-tech/OpenSora-STDiT-v3/model.safetensors"',
+                     'from_pretrained="hpcai-tech/Open-Sora-v2/Open_Sora_v2.safetensors"',
                      text)
         changes_made.append("Model")
 
@@ -88,7 +88,7 @@ def patch_file(path: Path, checkpoint: str) -> bool:
 
     old_model_subfolder = r'from_pretrained\s*=\s*["\']hpcai-tech/Open-Sora-v2[^"\']*["\']\s*,\s*subfolder\s*=\s*["\']model["\']'
     if re.search(old_model_subfolder, text):
-        text = re.sub(old_model_subfolder, 'from_pretrained="hpcai-tech/OpenSora-STDiT-v3/model.safetensors"', text)
+        text = re.sub(old_model_subfolder, 'from_pretrained="hpcai-tech/Open-Sora-v2/Open_Sora_v2.safetensors"', text)
         if "Model" not in changes_made:
             changes_made.append("Model (old subfolder)")
 
@@ -97,14 +97,6 @@ def patch_file(path: Path, checkpoint: str) -> bool:
                   f'ckpt="{checkpoint}"', text)
     text = re.sub(r"checkpoint[_-]?path\s*=\s*['\"]\./ckpts/[^'\"]+['\"]",
                   f'checkpoint_path="{checkpoint}"', text, flags=re.IGNORECASE)
-
-    # Pattern 8: Fix model type from flux to stdit3 for STDiT-v3 checkpoint
-    if 'STDiT-v3' in checkpoint or 'STDiT-v3' in text:
-        flux_type = r'type\s*=\s*["\']flux["\']'
-        if re.search(flux_type, text):
-            text = re.sub(flux_type, 'type="stdit3"', text)
-            if "model type" not in changes_made:
-                changes_made.append("model type (flux->stdit3)")
 
     if text != orig:
         path.write_text(text)
@@ -129,7 +121,7 @@ def main() -> None:
 
     checkpoint = os.environ.get(
         "CHECKPOINT_PATH",
-        "hpcai-tech/OpenSora-STDiT-v3/model.safetensors",
+        "hpcai-tech/Open-Sora-v2/Open_Sora_v2.safetensors",
     )
     print(f"Config dir: {cfg_dir}")
     print(f"Checkpoint: {checkpoint}")
