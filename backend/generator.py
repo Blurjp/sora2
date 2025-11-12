@@ -86,7 +86,8 @@ class VideoGenerator:
         self,
         *,
         video_id: str,
-        image_path: str,
+        mode: str,
+        image_path: Optional[str],
         prompt: str,
         duration: int,
         aspect_ratio: str,
@@ -94,8 +95,15 @@ class VideoGenerator:
         num_steps: int,
         guidance: float,
         guidance_img: float,
-        seed: Optional[int],
-        refine_prompt: bool
+        face_detail: float = 4.5,
+        aesthetic_score: float = 6.5,
+        sharpness: float = 1.0,
+        negative_prompt: Optional[str] = None,
+        face_enhance: bool = True,
+        denoise: bool = True,
+        temporal_smoothing: bool = True,
+        seed: Optional[int] = None,
+        refine_prompt: bool = False
     ) -> bool:
         """
         Launch generation exactly once. Returns False if a job is already running.
@@ -106,6 +114,7 @@ class VideoGenerator:
         self._current_task = asyncio.create_task(
             self.generate_video(
                 video_id=video_id,
+                mode=mode,
                 image_path=image_path,
                 prompt=prompt,
                 duration=duration,
@@ -114,6 +123,13 @@ class VideoGenerator:
                 num_steps=num_steps,
                 guidance=guidance,
                 guidance_img=guidance_img,
+                face_detail=face_detail,
+                aesthetic_score=aesthetic_score,
+                sharpness=sharpness,
+                negative_prompt=negative_prompt,
+                face_enhance=face_enhance,
+                denoise=denoise,
+                temporal_smoothing=temporal_smoothing,
                 seed=seed,
                 refine_prompt=refine_prompt,
             )
@@ -128,7 +144,8 @@ class VideoGenerator:
     async def generate_video(
         self,
         video_id: str,
-        image_path: str,
+        mode: str,
+        image_path: Optional[str],
         prompt: str,
         duration: int = 15,
         aspect_ratio: str = "16:9",
@@ -136,6 +153,13 @@ class VideoGenerator:
         num_steps: int = DEFAULT_NUM_STEPS,
         guidance: float = DEFAULT_GUIDANCE,
         guidance_img: float = DEFAULT_GUIDANCE_IMG,
+        face_detail: float = 4.5,
+        aesthetic_score: float = 6.5,
+        sharpness: float = 1.0,
+        negative_prompt: Optional[str] = None,
+        face_enhance: bool = True,
+        denoise: bool = True,
+        temporal_smoothing: bool = True,
         seed: Optional[int] = None,
         refine_prompt: bool = False
     ) -> Dict:
@@ -144,11 +168,22 @@ class VideoGenerator:
 
         Args:
             video_id: Unique identifier for this generation job
-            image_path: Path to input image
+            mode: Generation mode (i2v or t2v)
+            image_path: Path to input image (required for i2v, optional for t2v)
             prompt: Text prompt for generation
             duration: Video duration in seconds
             aspect_ratio: Video aspect ratio
             motion_score: Motion intensity (0.0-1.0)
+            num_steps: Diffusion steps
+            guidance: Text guidance strength
+            guidance_img: Image guidance strength
+            face_detail: Face detail level
+            aesthetic_score: Aesthetic quality
+            sharpness: Sharpness level
+            negative_prompt: What to avoid
+            face_enhance: Enable face enhancement
+            denoise: Enable denoising
+            temporal_smoothing: Enable temporal smoothing
             seed: Random seed for reproducibility
             refine_prompt: Whether to refine prompt with AI
 
@@ -164,9 +199,11 @@ class VideoGenerator:
                     logger.info(f"Enhanced prompt for quality: {enhanced_prompt}")
 
                 # Log generation parameters
-                logger.info(f"=== Starting video generation: {video_id} ===")
+                logger.info(f"=== Starting {mode.upper()} video generation: {video_id} ===")
                 logger.info(f"Parameters:")
-                logger.info(f"  - Image: {image_path}")
+                logger.info(f"  - Mode: {mode}")
+                if image_path:
+                    logger.info(f"  - Image: {image_path}")
                 logger.info(f"  - Prompt: {enhanced_prompt}")
                 logger.info(f"  - Duration: {duration}s")
                 logger.info(f"  - Aspect ratio: {aspect_ratio}")
@@ -174,6 +211,8 @@ class VideoGenerator:
                 logger.info(f"  - Num steps: {num_steps}")
                 logger.info(f"  - Guidance: {guidance}")
                 logger.info(f"  - Guidance img: {guidance_img}")
+                logger.info(f"  - Face detail: {face_detail}")
+                logger.info(f"  - Aesthetic score: {aesthetic_score}")
                 logger.info(f"  - Seed: {seed}")
                 logger.info(f"  - Refine prompt: {refine_prompt}")
 
@@ -217,15 +256,25 @@ class VideoGenerator:
                     "--standalone",
                     "scripts/diffusion/inference.py",
                     str(temp_config_path),
-                    "--cond_type", "i2v_head",
-                    "--ref", str(image_path),
+                ]
+
+                # Add mode-specific parameters
+                if mode == "i2v":
+                    cmd.extend(["--cond_type", "i2v_head"])
+                    if image_path:
+                        cmd.extend(["--ref", str(image_path)])
+                else:  # t2v mode
+                    cmd.extend(["--cond_type", "t2v"])
+
+                # Add common parameters
+                cmd.extend([
                     "--prompt", enhanced_prompt,  # Use enhanced prompt
                     "--num_frames", str(num_frames),
                     "--aspect_ratio", aspect_ratio,
                     "--motion-score", str(motion_score),
                     "--save_dir", str(job_output_dir),
                     # --offload removed for full GPU utilization
-                ]
+                ])
 
                 # Only add --ckpt if explicitly set via environment variable
                 # Otherwise, let the config file's from_pretrained handle model loading
