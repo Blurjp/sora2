@@ -153,6 +153,32 @@ The script automatically optimizes for **MAXIMUM quality**:
 
 ---
 
+## 🚀 Upgrading to 768px Resolution (HIGHLY RECOMMENDED)
+
+**The default 256px resolution is very low quality.** For production-quality videos like the [Open-Sora showcase](https://opensora2.com/#showcase), upgrade to 768px:
+
+```bash
+cd ~/sora2
+./upgrade_to_768px.sh
+```
+
+**Quality Improvement:**
+- **9x more pixels** (768x768 vs 256x256)
+- Professional-grade video quality
+- Matches showcase video quality
+
+**Requirements:**
+- **VRAM:** ~24-32GB (A100 40GB or H100 recommended)
+- **Speed:** 2-3x slower than 256px
+- **Worth it:** Dramatically better results
+
+**Combine with maximum quality settings:**
+```bash
+./enable_max_quality.sh  # After upgrading to 768px
+```
+
+---
+
 ## 🐛 Troubleshooting
 
 ### Error: ModuleNotFoundError: No module named 'tensornvme'

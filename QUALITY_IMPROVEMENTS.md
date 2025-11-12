@@ -14,7 +14,29 @@ Your system is already optimized with:
 
 ## 🚀 Further Quality Improvements
 
-### 1. **Increase to MAXIMUM Quality Settings**
+### 1. ⭐ **UPGRADE TO 768px RESOLUTION (MOST IMPORTANT!)** ⭐
+
+**This is the #1 reason for poor quality!** You're currently using 256px resolution which is extremely low.
+
+**Quick Upgrade:**
+```bash
+cd ~/sora2
+git pull
+./upgrade_to_768px.sh
+```
+
+**Impact:**
+- **9x more pixels** (768x768 vs 256x256)
+- Matches [Open-Sora showcase](https://opensora2.com/#showcase) quality
+- Goes from "demo quality" to "production quality"
+- Requires ~24-32GB VRAM (A100/H100)
+- 2-3x slower but MUCH better results
+
+**This single change will give you the biggest quality improvement possible.**
+
+---
+
+### 2. **Increase to MAXIMUM Quality Settings**
 
 Edit your `.env` file to use absolute maximum values:
 
@@ -32,9 +54,9 @@ DEFAULT_GUIDANCE_IMG=4.5     # Was 3.5, even stronger face preservation
 
 ---
 
-### 2. **Upgrade to Higher Resolution**
+### 3. **Try Even Higher Resolutions (If Available)**
 
-The current 256px config is relatively low resolution. To upgrade:
+If your GPU has enough VRAM, you might find even higher resolution configs:
 
 **Option A: Use 512px config (if available)**
 
@@ -62,7 +84,7 @@ ls ~/Open-Sora/configs/diffusion/inference/
 
 ---
 
-### 3. **Optimize Prompts for Best Results**
+### 4. **Optimize Prompts for Best Results**
 
 **Prompt Engineering Best Practices:**
 
@@ -95,7 +117,7 @@ sunset colors, aerial perspective, 4K cinematic quality"
 
 ---
 
-### 4. **Use High-Quality Reference Images**
+### 5. **Use High-Quality Reference Images**
 
 When using image-to-video:
 
@@ -116,7 +138,7 @@ When using image-to-video:
 
 ---
 
-### 5. **Adjust Generation Parameters Per Request**
+### 6. **Adjust Generation Parameters Per Request**
 
 You can override defaults in API requests:
 
@@ -143,7 +165,7 @@ curl -X POST "http://your-gpu:8001/api/generate" \
 
 ---
 
-### 6. **Post-Processing Improvements**
+### 7. **Post-Processing Improvements**
 
 After generation, enhance quality with:
 
@@ -160,7 +182,7 @@ After generation, enhance quality with:
 
 ---
 
-### 7. **Model Checkpoint Upgrades**
+### 8. **Model Checkpoint Upgrades**
 
 Use higher quality checkpoints if available:
 
@@ -176,7 +198,7 @@ CHECKPOINT_PATH=hpcai-tech/OpenSora-STDiT-v3-XL/model.safetensors
 
 ---
 
-### 8. **Increase Frame Count for Smoother Motion**
+### 9. **Increase Frame Count for Smoother Motion**
 
 Currently using 8 FPS. For smoother videos:
 
@@ -195,7 +217,21 @@ FRAMES_PER_SECOND = 16  # Smoother motion
 
 ## 🎯 Recommended Quality Upgrade Path
 
-### Step 1: Maximize Current Settings (5 minutes)
+### Step 1: ⭐ Upgrade to 768px Resolution (2 minutes) ⭐
+
+**This is the single most important upgrade!**
+
+```bash
+cd ~/sora2
+git pull
+./upgrade_to_768px.sh
+```
+
+**Impact: 9x more pixels = Dramatically better quality**
+
+---
+
+### Step 2: Maximize Quality Settings (5 minutes)
 ```bash
 # Option A: Use the automated script (recommended)
 cd ~/sora2
@@ -209,13 +245,6 @@ DEFAULT_GUIDANCE_IMG=4.5
 
 # IMPORTANT: Restart service for changes to take effect
 sudo systemctl restart opensora-gpu
-```
-
-### Step 2: Check for Higher Resolution Config (2 minutes)
-```bash
-# On GPU server
-ls ~/Open-Sora/configs/diffusion/inference/
-# If 512px.py or higher exists, use it
 ```
 
 ### Step 3: Improve Prompts (immediate)
