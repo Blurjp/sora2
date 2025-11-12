@@ -11,14 +11,14 @@ Missing key(s) in state_dict for AutoencoderKLCausal3D
 
 Open-Sora inference configs point **all components** (model, VAE, T5, CLIP) to the same checkpoint file. This causes the VAE to try loading from the main model weights, which have different keys.
 
-**Incorrect (current):**
-- Model: `hpcai-tech/OpenSora-STDiT-v3/model.safetensors`
-- VAE: `hpcai-tech/OpenSora-STDiT-v3/model.safetensors` ❌ **WRONG!**
-- T5: `hpcai-tech/OpenSora-STDiT-v3/model.safetensors` ❌ **WRONG!**
-- CLIP: `hpcai-tech/OpenSora-STDiT-v3/model.safetensors` ❌ **WRONG!**
+**Incorrect (old configs):**
+- Model: `./ckpts/Open_Sora_v2.safetensors` or `hpcai-tech/OpenSora-STDiT-v3/model.safetensors`
+- VAE: Points to model checkpoint ❌ **WRONG!**
+- T5: Points to model checkpoint ❌ **WRONG!**
+- CLIP: Points to model checkpoint ❌ **WRONG!**
 
-**Correct:**
-- Model: `hpcai-tech/OpenSora-STDiT-v3/model.safetensors` ✅
+**Correct (flux/MMDiT architecture):**
+- Model: `hpcai-tech/Open-Sora-v2/Open_Sora_v2.safetensors` ✅ (11B params)
 - VAE: `hpcai-tech/Open-Sora-v2/hunyuan_vae.safetensors` ✅
 - T5: `google/t5-v1_1-xxl` ✅
 - CLIP: `openai/clip-vit-large-patch14` ✅
@@ -67,7 +67,7 @@ python3 patch_opensora_config.py
 # Check that models can be downloaded
 python3 - <<'PY'
 from huggingface_hub import hf_hub_download as d
-print('Model:', d('hpcai-tech/OpenSora-STDiT-v3','model.safetensors'))
+print('Model:', d('hpcai-tech/Open-Sora-v2','Open_Sora_v2.safetensors'))
 print('VAE  :', d('hpcai-tech/Open-Sora-v2','hunyuan_vae.safetensors'))
 PY
 ```
@@ -79,12 +79,12 @@ PY
 pkill -f python
 
 # Restart with proper config
-./lambda_run_gpu_service.sh --api-key secret_sora2_3e1296ff401d44c5b476387cda212173.PmVHz6bzECPi06mihPABbHObqOo5RiBs
+./lambda_run_gpu_service.sh --api-key secret_sora2_<your_key_here>
 ```
 
 Or use the restart script:
 ```bash
-./restart.sh --gpu-service --api-key secret_sora2_3e1296ff401d44c5b476387cda212173.PmVHz6bzECPi06mihPABbHObqOo5RiBs
+./restart.sh --gpu-service --api-key secret_sora2_<your_key_here>
 ```
 
 ## What the Patch Does
@@ -94,10 +94,11 @@ The `patch_opensora_config.py` script:
 1. **Locates** Open-Sora config files (256px.py, 768px.py)
 2. **Creates backups** (.backup files)
 3. **Updates** component paths:
-   - VAE: `hunyuan_vae.safetensors`
+   - Model: `hpcai-tech/Open-Sora-v2/Open_Sora_v2.safetensors`
+   - VAE: `hpcai-tech/Open-Sora-v2/hunyuan_vae.safetensors`
    - T5: `google/t5-v1_1-xxl`
    - CLIP: `openai/clip-vit-large-patch14`
-4. **Sets** main model path to `hpcai-tech/OpenSora-STDiT-v3/model.safetensors`
+4. **Removes** any `subfolder` parameters that cause errors
 
 ## Manual Verification
 
@@ -246,12 +247,12 @@ cp 768px.py.backup 768px.py
 
 | Component | Wrong Path | Correct Path |
 |-----------|-----------|--------------|
-| Model | ❌ Open_Sora_v2.safetensors | ✅ OpenSora-STDiT-v3/model.safetensors |
-| VAE | ❌ Open_Sora_v2.safetensors | ✅ hpcai-tech/Open-Sora-v2/hunyuan_vae.safetensors |
-| T5 | ❌ Open_Sora_v2.safetensors | ✅ google/t5-v1_1-xxl |
-| CLIP | ❌ Open_Sora_v2.safetensors | ✅ openai/clip-vit-large-patch14 |
+| Model | ❌ ./ckpts/Open_Sora_v2.safetensors | ✅ hpcai-tech/Open-Sora-v2/Open_Sora_v2.safetensors |
+| VAE | ❌ ./ckpts/hunyuan_vae.safetensors | ✅ hpcai-tech/Open-Sora-v2/hunyuan_vae.safetensors |
+| T5 | ❌ ./ckpts/google/t5-v1_1-xxl | ✅ google/t5-v1_1-xxl |
+| CLIP | ❌ ./ckpts/openai/clip-vit-large-patch14 | ✅ openai/clip-vit-large-patch14 |
 
-Run `python3 patch_opensora_config.py` to fix all paths automatically!
+Run `python3 patch_opensora_config.py` or `bash fix_opensora_paths.sh` to fix all paths automatically!
 
 
 

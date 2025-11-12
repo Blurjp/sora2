@@ -21,11 +21,12 @@ cp "$CONFIG_FILE" "$CONFIG_FILE.backup.$(date +%s)"
 echo "✓ Backup created"
 
 # Fix all paths - use correct Open-Sora-v2 repo for flux model
+# Be specific to avoid breaking VAE/T5/CLIP paths
 sed -i \
     -e 's|"hpcai-tech/Open-Sora-v2/model"|"hpcai-tech/Open-Sora-v2/Open_Sora_v2.safetensors"|g' \
     -e 's|"hpcai-tech/OpenSora-STDiT-v3/model.safetensors"|"hpcai-tech/Open-Sora-v2/Open_Sora_v2.safetensors"|g' \
     -e 's|"hpcai-tech/OpenSora-STDiT-v3/tree/main/model.safetensors"|"hpcai-tech/Open-Sora-v2/Open_Sora_v2.safetensors"|g' \
-    -e 's|"hpcai-tech/OpenSora-STDiT-v3"|"hpcai-tech/Open-Sora-v2/Open_Sora_v2.safetensors"|g' \
+    -e 's|"hpcai-tech/OpenSora-STDiT-v3/hunyuan_vae.safetensors"|"hpcai-tech/Open-Sora-v2/hunyuan_vae.safetensors"|g' \
     -e 's|"hpcai-tech/Open-Sora-v2/hunyuan_vae"|"hpcai-tech/Open-Sora-v2/hunyuan_vae.safetensors"|g' \
     -e "s|from_pretrained.*=.*['\"]\\./ckpts/hunyuan_vae\\.safetensors['\"]|from_pretrained=\"hpcai-tech/Open-Sora-v2/hunyuan_vae.safetensors\"|g" \
     -e "s|from_pretrained.*=.*['\"]\\./ckpts/google/t5-v1_1-xxl['\"]|from_pretrained=\"google/t5-v1_1-xxl\"|g" \
