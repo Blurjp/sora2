@@ -55,6 +55,75 @@ header h1 {
     margin-bottom: 24px;
 }
 
+/* Mode Selector */
+.mode-selector {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.mode-option {
+    position: relative;
+    cursor: pointer;
+    border: 3px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.mode-option:hover {
+    border-color: #cbd5e0;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.mode-option.mode-active {
+    border-color: #667eea;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.2);
+}
+
+.mode-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+}
+
+.mode-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.mode-icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.mode-content strong {
+    display: block;
+    color: #2d3748;
+    margin-bottom: 4px;
+    font-size: 1rem;
+}
+
+.mode-content p {
+    margin: 0;
+    color: #718096;
+    font-size: 0.875rem;
+}
+
+.mode-option.mode-active .mode-content strong {
+    color: #667eea;
+}
+
+@media (max-width: 768px) {
+    .mode-selector {
+        grid-template-columns: 1fr;
+    }
+}
+
 .form-group label {
     display: block;
     margin-bottom: 8px;

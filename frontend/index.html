@@ -16,11 +16,40 @@
         <main>
             <div class="card">
                 <form id="videoForm">
-                    <!-- Image Upload -->
+                    <!-- Generation Mode Selector -->
                     <div class="form-group">
+                        <label>
+                            <strong>🎬 Generation Mode</strong>
+                        </label>
+                        <div class="mode-selector">
+                            <label class="mode-option mode-active" id="modeI2V">
+                                <input type="radio" name="genMode" value="i2v" checked>
+                                <div class="mode-content">
+                                    <span class="mode-icon">🖼️➡️🎥</span>
+                                    <div>
+                                        <strong>Image-to-Video</strong>
+                                        <p>Animate a reference image</p>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="mode-option" id="modeT2V">
+                                <input type="radio" name="genMode" value="t2v">
+                                <div class="mode-content">
+                                    <span class="mode-icon">✍️➡️🎥</span>
+                                    <div>
+                                        <strong>Text-to-Video</strong>
+                                        <p>Generate from text only</p>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Image Upload (I2V Mode Only) -->
+                    <div class="form-group" id="imageUploadSection">
                         <label for="imageInput">
                             <strong>Input Image</strong>
-                            <span class="required">*</span>
+                            <span class="required" id="imageRequired">*</span>
                         </label>
                         <div class="upload-area" id="uploadArea">
                             <input type="file" id="imageInput" accept="image/png,image/jpeg,image/jpg,image/webp" required>

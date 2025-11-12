@@ -68,7 +68,8 @@ class GPUClient:
 
     async def generate_video(
         self,
-        image_path: str,
+        mode: str,
+        image_path: Optional[str],
         prompt: str,
         duration: int = 15,
         aspect_ratio: str = "16:9",
@@ -76,6 +77,13 @@ class GPUClient:
         num_steps: int = 120,
         guidance: float = 12.0,
         guidance_img: float = 3.5,
+        face_detail: float = 4.5,
+        aesthetic_score: float = 6.5,
+        sharpness: float = 1.0,
+        negative_prompt: Optional[str] = None,
+        face_enhance: bool = True,
+        denoise: bool = True,
+        temporal_smoothing: bool = True,
         seed: Optional[int] = None,
         refine_prompt: bool = False
     ) -> Dict:
@@ -83,7 +91,8 @@ class GPUClient:
         Send video generation request to GPU service
 
         Args:
-            image_path: Path to input image file
+            mode: Generation mode (i2v or t2v)
+            image_path: Path to input image file (required for i2v)
             prompt: Text prompt for generation
             duration: Video duration in seconds
             aspect_ratio: Video aspect ratio
@@ -91,6 +100,13 @@ class GPUClient:
             num_steps: Diffusion steps
             guidance: Text guidance strength
             guidance_img: Image guidance strength
+            face_detail: Face detail level
+            aesthetic_score: Aesthetic quality
+            sharpness: Sharpness level
+            negative_prompt: What to avoid
+            face_enhance: Enable face enhancement
+            denoise: Enable denoising
+            temporal_smoothing: Enable temporal smoothing
             seed: Random seed
             refine_prompt: Whether to refine prompt
 
@@ -103,24 +119,37 @@ class GPUClient:
             # Prepare form data
             data = aiohttp.FormData()
 
-            # Add image file
-            with open(image_path, 'rb') as f:
+            # Add generation mode
+            data.add_field('mode', mode)
+
+            # Add image file for i2v mode only
+            if mode == 'i2v' and image_path:
+                with open(image_path, 'rb') as f:
+                    image_data = f.read()
                 data.add_field('image',
-                              f,
+                              image_data,
                               filename=Path(image_path).name,
                               content_type='application/octet-stream')
 
-                # Add form fields
-                data.add_field('prompt', prompt)
-                data.add_field('duration', str(duration))
-                data.add_field('aspect_ratio', aspect_ratio)
-                data.add_field('motion_score', str(motion_score))
-                data.add_field('num_steps', str(num_steps))
-                data.add_field('guidance', str(guidance))
-                data.add_field('guidance_img', str(guidance_img))
-                if seed is not None:
-                    data.add_field('seed', str(seed))
-                data.add_field('refine_prompt', str(refine_prompt).lower())
+            # Add form fields
+            data.add_field('prompt', prompt)
+            data.add_field('duration', str(duration))
+            data.add_field('aspect_ratio', aspect_ratio)
+            data.add_field('motion_score', str(motion_score))
+            data.add_field('num_steps', str(num_steps))
+            data.add_field('guidance', str(guidance))
+            data.add_field('guidance_img', str(guidance_img))
+            data.add_field('face_detail', str(face_detail))
+            data.add_field('aesthetic_score', str(aesthetic_score))
+            data.add_field('sharpness', str(sharpness))
+            if negative_prompt:
+                data.add_field('negative_prompt', negative_prompt)
+            data.add_field('face_enhance', str(face_enhance).lower())
+            data.add_field('denoise', str(denoise).lower())
+            data.add_field('temporal_smoothing', str(temporal_smoothing).lower())
+            if seed is not None:
+                data.add_field('seed', str(seed))
+            data.add_field('refine_prompt', str(refine_prompt).lower())
 
                 # Send request
                 async with session.post(f"{self.gpu_url}/api/generate", data=data) as response:

@@ -1,6 +1,10 @@
 // DOM Elements
 const videoForm = document.getElementById('videoForm');
+const modeI2V = document.getElementById('modeI2V');
+const modeT2V = document.getElementById('modeT2V');
+const imageUploadSection = document.getElementById('imageUploadSection');
 const imageInput = document.getElementById('imageInput');
+const imageRequired = document.getElementById('imageRequired');
 const uploadArea = document.getElementById('uploadArea');
 const previewContainer = document.getElementById('previewContainer');
 const imagePreview = document.getElementById('imagePreview');
@@ -36,6 +40,27 @@ const retryBtn = document.getElementById('retryBtn');
 // State
 let currentVideoId = null;
 let statusCheckInterval = null;
+
+// Generation Mode Handling
+let currentMode = 'i2v'; // Default mode
+
+modeI2V.addEventListener('click', () => {
+    currentMode = 'i2v';
+    modeI2V.classList.add('mode-active');
+    modeT2V.classList.remove('mode-active');
+    imageUploadSection.style.display = 'block';
+    imageInput.required = true;
+    imageRequired.style.display = 'inline';
+});
+
+modeT2V.addEventListener('click', () => {
+    currentMode = 't2v';
+    modeT2V.classList.add('mode-active');
+    modeI2V.classList.remove('mode-active');
+    imageUploadSection.style.display = 'none';
+    imageInput.required = false;
+    imageRequired.style.display = 'none';
+});
 
 // Image Upload Handling
 imageInput.addEventListener('change', handleImageSelect);
@@ -295,7 +320,18 @@ videoForm.addEventListener('submit', async (e) => {
 
     // Prepare form data
     const formData = new FormData();
-    formData.append('image', imageInput.files[0]);
+
+    // Add generation mode
+    formData.append('mode', currentMode);
+
+    // Add image only for i2v mode
+    if (currentMode === 'i2v') {
+        if (!imageInput.files || !imageInput.files[0]) {
+            throw new Error('Please select an image for Image-to-Video mode');
+        }
+        formData.append('image', imageInput.files[0]);
+    }
+
     formData.append('prompt', promptInput.value);
     formData.append('duration', document.getElementById('durationInput').value);
     formData.append('aspect_ratio', document.getElementById('aspectRatioInput').value);

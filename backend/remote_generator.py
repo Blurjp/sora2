@@ -32,7 +32,8 @@ class RemoteVideoGenerator:
         self,
         *,
         video_id: str,
-        image_path: str,
+        mode: str,
+        image_path: Optional[str],
         prompt: str,
         duration: int,
         aspect_ratio: str,
@@ -40,8 +41,15 @@ class RemoteVideoGenerator:
         num_steps: int,
         guidance: float,
         guidance_img: float,
-        seed: Optional[int],
-        refine_prompt: bool
+        face_detail: float = 4.5,
+        aesthetic_score: float = 6.5,
+        sharpness: float = 1.0,
+        negative_prompt: Optional[str] = None,
+        face_enhance: bool = True,
+        denoise: bool = True,
+        temporal_smoothing: bool = True,
+        seed: Optional[int] = None,
+        refine_prompt: bool = False
     ) -> bool:
         """
         Start video generation on remote GPU.
@@ -57,6 +65,7 @@ class RemoteVideoGenerator:
         asyncio.create_task(
             self._generate_and_download(
                 video_id=video_id,
+                mode=mode,
                 image_path=image_path,
                 prompt=prompt,
                 duration=duration,
@@ -65,6 +74,13 @@ class RemoteVideoGenerator:
                 num_steps=num_steps,
                 guidance=guidance,
                 guidance_img=guidance_img,
+                face_detail=face_detail,
+                aesthetic_score=aesthetic_score,
+                sharpness=sharpness,
+                negative_prompt=negative_prompt,
+                face_enhance=face_enhance,
+                denoise=denoise,
+                temporal_smoothing=temporal_smoothing,
                 seed=seed,
                 refine_prompt=refine_prompt
             )
@@ -75,7 +91,8 @@ class RemoteVideoGenerator:
     async def _generate_and_download(
         self,
         video_id: str,
-        image_path: str,
+        mode: str,
+        image_path: Optional[str],
         prompt: str,
         duration: int,
         aspect_ratio: str,
@@ -83,6 +100,13 @@ class RemoteVideoGenerator:
         num_steps: int,
         guidance: float,
         guidance_img: float,
+        face_detail: float,
+        aesthetic_score: float,
+        sharpness: float,
+        negative_prompt: Optional[str],
+        face_enhance: bool,
+        denoise: bool,
+        temporal_smoothing: bool,
         seed: Optional[int],
         refine_prompt: bool
     ):
@@ -98,8 +122,9 @@ class RemoteVideoGenerator:
             }
 
             # Send generation request to GPU service
-            logger.info(f"Sending generation request to GPU service: {video_id}")
+            logger.info(f"Sending {mode.upper()} generation request to GPU service: {video_id}")
             result = await self.gpu_client.generate_video(
+                mode=mode,
                 image_path=image_path,
                 prompt=prompt,
                 duration=duration,
@@ -108,6 +133,13 @@ class RemoteVideoGenerator:
                 num_steps=num_steps,
                 guidance=guidance,
                 guidance_img=guidance_img,
+                face_detail=face_detail,
+                aesthetic_score=aesthetic_score,
+                sharpness=sharpness,
+                negative_prompt=negative_prompt,
+                face_enhance=face_enhance,
+                denoise=denoise,
+                temporal_smoothing=temporal_smoothing,
                 seed=seed,
                 refine_prompt=refine_prompt
             )

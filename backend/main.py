@@ -126,7 +126,8 @@ async def health_check():
 @app.post("/api/generate", response_model=GenerateResponse)
 async def generate_video(
     background_tasks: BackgroundTasks,
-    image: UploadFile = File(..., description="Input image file"),
+    mode: str = Form("i2v", description="Generation mode: i2v (image-to-video) or t2v (text-to-video)"),
+    image: Optional[UploadFile] = File(None, description="Input image file (required for i2v mode)"),
     prompt: str = Form(..., description="Text prompt for video generation"),
     duration: int = Form(15, description=f"Video duration in seconds ({MIN_DURATION}-{MAX_DURATION})"),
     aspect_ratio: str = Form("16:9", description="Video aspect ratio"),
@@ -159,6 +160,13 @@ async def generate_video(
     - **refine_prompt**: Use AI to enhance the prompt (optional)
     """
     try:
+        # Validate mode
+        if mode not in ["i2v", "t2v"]:
+            raise HTTPException(
+                status_code=400,
+                detail="mode must be either 'i2v' or 't2v'"
+            )
+
         # Check if a generation is already in progress
         if active_generator.is_processing():
             raise HTTPException(
@@ -166,13 +174,43 @@ async def generate_video(
                 detail="A video generation is already in progress. Please wait for it to complete."
             )
 
-        # Validate image file
-        file_ext = Path(image.filename).suffix.lower()
-        if file_ext not in ALLOWED_IMAGE_EXTENSIONS:
+        # For i2v mode, image is required
+        if mode == "i2v" and not image:
             raise HTTPException(
                 status_code=400,
-                detail=f"Invalid file type. Allowed: {', '.join(ALLOWED_IMAGE_EXTENSIONS)}"
+                detail="Image is required for image-to-video mode"
             )
+
+        # Handle image upload for i2v mode
+        image_path = None
+        if mode == "i2v" and image:
+            # Validate image file
+            file_ext = Path(image.filename).suffix.lower()
+            if file_ext not in ALLOWED_IMAGE_EXTENSIONS:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid file type. Allowed: {', '.join(ALLOWED_IMAGE_EXTENSIONS)}"
+                )
+
+            # Generate unique video ID
+            video_id = str(uuid.uuid4())
+
+            # Save uploaded image
+            image_path = TEMP_DIR / f"{video_id}{file_ext}"
+            content = await image.read()
+
+            # Check file size
+            if len(content) > MAX_UPLOAD_SIZE:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"File too large. Maximum size: {MAX_UPLOAD_SIZE // 1024 // 1024}MB"
+                )
+
+            with open(image_path, "wb") as f:
+                f.write(content)
+        else:
+            # T2V mode - no image needed
+            video_id = str(uuid.uuid4())
 
         # Validate duration
         if not (MIN_DURATION <= duration <= MAX_DURATION):
@@ -202,30 +240,14 @@ async def generate_video(
                 detail=f"guidance_img must be between {MIN_GUIDANCE_IMG} and {MAX_GUIDANCE_IMG}"
             )
 
-        # Generate unique video ID
-        video_id = str(uuid.uuid4())
-
-        # Save uploaded image
-        image_path = TEMP_DIR / f"{video_id}{file_ext}"
-        content = await image.read()
-
-        # Check file size
-        if len(content) > MAX_UPLOAD_SIZE:
-            raise HTTPException(
-                status_code=400,
-                detail=f"File too large. Maximum size: {MAX_UPLOAD_SIZE // 1024 // 1024}MB"
-            )
-
-        with open(image_path, "wb") as f:
-            f.write(content)
-
-        logger.info(f"Received generation request: {video_id}")
+        logger.info(f"Received {mode.upper()} generation request: {video_id}")
         logger.info(f"Prompt: {prompt[:100]}...")
 
         # Start generation (returns False only if someone else snuck in)
         started = active_generator.start_generation(
             video_id=video_id,
-            image_path=str(image_path),
+            mode=mode,
+            image_path=str(image_path) if image_path else None,
             prompt=prompt,
             duration=duration,
             aspect_ratio=aspect_ratio,
