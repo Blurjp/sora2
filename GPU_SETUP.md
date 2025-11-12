@@ -20,6 +20,23 @@ bash gpu_setup.sh
 
 ---
 
+## 🔄 For Existing Installations
+
+If you already have the service installed and need to upgrade to 768px:
+
+```bash
+cd ~/sora2
+git pull
+bash migrate_to_768px.sh
+```
+
+This will:
+- ✅ Update .env to use MODEL_RESOLUTION=768px
+- ✅ Restart the service automatically
+- ✅ Verify 768px.py config exists
+
+---
+
 ## 🔧 What The Script Does Automatically
 
 The `gpu_setup.sh` script handles **EVERYTHING** in a single run:
@@ -62,6 +79,7 @@ The `gpu_setup.sh` script handles **EVERYTHING** in a single run:
 
 ### 7. **Environment Setup** ✅
    - Creates `.env` file with all settings
+   - Sets **MODEL_RESOLUTION=768px** (production quality)
    - Configures paths and quality parameters
    - Services load quality defaults from .env at startup
    - Can be changed later with `enable_max_quality.sh`

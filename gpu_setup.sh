@@ -289,6 +289,9 @@ cat > "$PROJECT_DIR/.env" << EOF
 # Open-Sora Configuration
 OPENSORA_PATH=$OPENSORA_PATH
 
+# Model Resolution (768px for production quality)
+MODEL_RESOLUTION=768px
+
 # GPU Service Configuration
 HOST=0.0.0.0
 PORT=$SERVICE_PORT
