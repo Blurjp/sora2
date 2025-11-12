@@ -19,8 +19,8 @@ def fix_opensora_config():
     """
     opensora_path = os.environ.get("OPENSORA_PATH", os.path.expanduser("~/Open-Sora"))
 
-    # Get model resolution from environment (defaults to 256px for backwards compatibility)
-    model_resolution = os.environ.get("MODEL_RESOLUTION", "256px")
+    # Get model resolution from environment (defaults to 768px for production quality)
+    model_resolution = os.environ.get("MODEL_RESOLUTION", "768px")
     config_file = Path(opensora_path) / f"configs/diffusion/inference/{model_resolution}.py"
 
     if not config_file.exists():

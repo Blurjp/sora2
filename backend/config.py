@@ -51,8 +51,8 @@ MIN_GUIDANCE_IMG = 0.5
 MAX_GUIDANCE_IMG = 10.0  # Increased for maximum image fidelity
 
 # Model configuration
-# Read from environment to allow easy upgrading to 768px
-MODEL_RESOLUTION = os.environ.get("MODEL_RESOLUTION", "256px")  # "256px" or "768px"
+# Defaults to 768px for production-quality videos
+MODEL_RESOLUTION = os.environ.get("MODEL_RESOLUTION", "768px")  # "768px" recommended, "256px" for testing only
 MODEL_CONFIG_PATH = f"configs/diffusion/inference/{MODEL_RESOLUTION}.py"
 
 # Checkpoint configuration

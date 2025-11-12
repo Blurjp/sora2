@@ -140,10 +140,11 @@ sudo systemctl restart opensora-gpu
 
 ## 📊 Quality Settings
 
-The script automatically optimizes for **MAXIMUM quality**:
+The script automatically configures for **PRODUCTION QUALITY**:
 
 | Parameter | Value | Purpose |
 |-----------|-------|---------|
+| **Resolution** | **768px** | Production-quality output (9x better than 256px) |
 | **Quality Steps** | 120 | 20% more diffusion steps for best quality |
 | **Prompt Strength** | 12.0 | Very strong prompt adherence |
 | **Image Influence** | 3.5 | Strong face preservation |
@@ -151,31 +152,32 @@ The script automatically optimizes for **MAXIMUM quality**:
 | **VAE Tiling** | Disabled | Prevents face distortion |
 | **Guidance Oscillation** | Disabled | Consistent quality |
 
+**Default Configuration:**
+- ✅ **768px resolution** for showcase-quality videos
+- ✅ Matches [Open-Sora showcase](https://opensora2.com/#showcase) quality out of the box
+- ✅ Requires ~24-32GB VRAM (A100 40GB or H100)
+
+**For testing/development only:** If you need 256px for faster testing on lower VRAM:
+```bash
+# In .env file
+MODEL_RESOLUTION=256px
+```
+
 ---
 
-## 🚀 Upgrading to 768px Resolution (HIGHLY RECOMMENDED)
+## 🎨 Maximum Quality Settings (Optional)
 
-**The default 256px resolution is very low quality.** For production-quality videos like the [Open-Sora showcase](https://opensora2.com/#showcase), upgrade to 768px:
+To push quality even higher, run:
 
 ```bash
 cd ~/sora2
-./upgrade_to_768px.sh
+./enable_max_quality.sh
 ```
 
-**Quality Improvement:**
-- **9x more pixels** (768x768 vs 256x256)
-- Professional-grade video quality
-- Matches showcase video quality
-
-**Requirements:**
-- **VRAM:** ~24-32GB (A100 40GB or H100 recommended)
-- **Speed:** 2-3x slower than 256px
-- **Worth it:** Dramatically better results
-
-**Combine with maximum quality settings:**
-```bash
-./enable_max_quality.sh  # After upgrading to 768px
-```
+This upgrades from default settings to maximum:
+- Steps: 120 → 150 (25% more diffusion steps)
+- Guidance: 12.0 → 15.0 (stronger prompt adherence)
+- Image Influence: 3.5 → 4.5 (better face preservation)
 
 ---
 

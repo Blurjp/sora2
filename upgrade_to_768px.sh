@@ -7,8 +7,11 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 echo -e "${YELLOW}═══════════════════════════════════════════════════${NC}"
-echo -e "${YELLOW}Upgrading to 768px Resolution (9x Better Quality)${NC}"
+echo -e "${YELLOW}Upgrading to 768px Resolution${NC}"
 echo -e "${YELLOW}═══════════════════════════════════════════════════${NC}"
+echo ""
+echo -e "${YELLOW}⚠️  Note: Fresh installations already default to 768px!${NC}"
+echo -e "${YELLOW}This script is only needed for existing installations.${NC}"
 echo ""
 
 # Get script directory and change to repo root
