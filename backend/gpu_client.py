@@ -151,22 +151,22 @@ class GPUClient:
                 data.add_field('seed', str(seed))
             data.add_field('refine_prompt', str(refine_prompt).lower())
 
-                # Send request
-                async with session.post(f"{self.gpu_url}/api/generate", data=data) as response:
-                    if response.status == 200:
-                        result = await response.json()
-                        logger.info(f"GPU generation started: {result}")
-                        return result
-                    elif response.status == 429:
-                        error_data = await response.json()
-                        return {
-                            "error": error_data.get("detail", "GPU busy"),
-                            "status": "busy"
-                        }
-                    else:
-                        error = await response.text()
-                        logger.error(f"GPU generation failed: {error}")
-                        return {"error": error, "status": "failed"}
+            # Send request
+            async with session.post(f"{self.gpu_url}/api/generate", data=data) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    logger.info(f"GPU generation started: {result}")
+                    return result
+                elif response.status == 429:
+                    error_data = await response.json()
+                    return {
+                        "error": error_data.get("detail", "GPU busy"),
+                        "status": "busy"
+                    }
+                else:
+                    error = await response.text()
+                    logger.error(f"GPU generation failed: {error}")
+                    return {"error": error, "status": "failed"}
 
         except Exception as e:
             logger.error(f"Error sending generation request: {e}", exc_info=True)
