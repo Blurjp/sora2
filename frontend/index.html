@@ -138,71 +138,188 @@
                     <!-- Advanced Quality Settings -->
                     <details class="advanced-settings" id="advancedSettings">
                         <summary><strong>⚙️ Fine-Tune Quality Settings</strong></summary>
-                        <div class="settings-grid">
-                            <div class="form-group">
-                                <label for="numStepsInput">
-                                    <strong>Quality Steps</strong>
-                                    <span class="tooltip">ℹ️
-                                        <span class="tooltiptext">More steps = better quality but slower (20-200)</span>
-                                    </span>
-                                </label>
-                                <input
-                                    type="range"
-                                    id="numStepsInput"
-                                    min="20"
-                                    max="200"
-                                    step="5"
-                                    value="120"
-                                >
-                                <div class="range-value">
-                                    <span id="numStepsValue">120</span> steps
-                                    <span class="quality-indicator" id="stepsIndicator">High</span>
-                                </div>
-                            </div>
 
-                            <div class="form-group">
-                                <label for="guidanceInput">
-                                    <strong>Prompt Strength</strong>
-                                    <span class="tooltip">ℹ️
-                                        <span class="tooltiptext">Higher = follows prompt more closely (1-20)</span>
-                                    </span>
-                                </label>
-                                <input
-                                    type="range"
-                                    id="guidanceInput"
-                                    min="1"
-                                    max="20"
-                                    step="0.5"
-                                    value="12"
-                                >
-                                <div class="range-value">
-                                    <span id="guidanceValue">12.0</span>
-                                    <span class="quality-indicator" id="guidanceIndicator">Strong</span>
+                        <!-- Core Quality Parameters -->
+                        <div class="settings-section">
+                            <h4>Core Quality</h4>
+                            <div class="settings-grid">
+                                <div class="form-group">
+                                    <label for="numStepsInput">
+                                        <strong>Quality Steps</strong>
+                                        <span class="tooltip">ℹ️
+                                            <span class="tooltiptext">More steps = better quality but slower (20-200)</span>
+                                        </span>
+                                    </label>
+                                    <input
+                                        type="range"
+                                        id="numStepsInput"
+                                        min="20"
+                                        max="200"
+                                        step="5"
+                                        value="120"
+                                    >
+                                    <div class="range-value">
+                                        <span id="numStepsValue">120</span> steps
+                                        <span class="quality-indicator" id="stepsIndicator">High</span>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div class="form-group">
-                                <label for="guidanceImgInput">
-                                    <strong>Image Influence</strong>
-                                    <span class="tooltip">ℹ️
-                                        <span class="tooltiptext">Higher = stays closer to reference image (0.5-10)</span>
-                                    </span>
-                                </label>
-                                <input
-                                    type="range"
-                                    id="guidanceImgInput"
-                                    min="0.5"
-                                    max="10"
-                                    step="0.5"
-                                    value="3.5"
-                                >
-                                <div class="range-value">
-                                    <span id="guidanceImgValue">3.5</span>
-                                    <span class="quality-indicator" id="imgIndicator">Strong</span>
+                                <div class="form-group">
+                                    <label for="guidanceInput">
+                                        <strong>Prompt Strength</strong>
+                                        <span class="tooltip">ℹ️
+                                            <span class="tooltiptext">Higher = follows prompt more closely (1-20)</span>
+                                        </span>
+                                    </label>
+                                    <input
+                                        type="range"
+                                        id="guidanceInput"
+                                        min="1"
+                                        max="20"
+                                        step="0.5"
+                                        value="12"
+                                    >
+                                    <div class="range-value">
+                                        <span id="guidanceValue">12.0</span>
+                                        <span class="quality-indicator" id="guidanceIndicator">Strong</span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="guidanceImgInput">
+                                        <strong>Image Influence</strong>
+                                        <span class="tooltip">ℹ️
+                                            <span class="tooltiptext">Higher = stays closer to reference image (0.5-10)</span>
+                                        </span>
+                                    </label>
+                                    <input
+                                        type="range"
+                                        id="guidanceImgInput"
+                                        min="0.5"
+                                        max="10"
+                                        step="0.5"
+                                        value="3.5"
+                                    >
+                                    <div class="range-value">
+                                        <span id="guidanceImgValue">3.5</span>
+                                        <span class="quality-indicator" id="imgIndicator">Strong</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <p class="hint">💡 Current settings are optimized for face quality and prompt following</p>
+
+                        <!-- Facial & Detail Enhancement -->
+                        <div class="settings-section">
+                            <h4>🎭 Facial & Detail Enhancement</h4>
+                            <div class="settings-grid">
+                                <div class="form-group">
+                                    <label for="faceDetailInput">
+                                        <strong>Face Detail Level</strong>
+                                        <span class="tooltip">ℹ️
+                                            <span class="tooltiptext">Higher = sharper faces, more detail (0.5-10)</span>
+                                        </span>
+                                    </label>
+                                    <input
+                                        type="range"
+                                        id="faceDetailInput"
+                                        min="0.5"
+                                        max="10"
+                                        step="0.5"
+                                        value="4.5"
+                                    >
+                                    <div class="range-value">
+                                        <span id="faceDetailValue">4.5</span>
+                                        <span class="quality-indicator" id="faceDetailIndicator">High</span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="aestheticScoreInput">
+                                        <strong>Aesthetic Quality</strong>
+                                        <span class="tooltip">ℹ️
+                                            <span class="tooltiptext">Improve overall visual appeal (4-9.5)</span>
+                                        </span>
+                                    </label>
+                                    <input
+                                        type="range"
+                                        id="aestheticScoreInput"
+                                        min="4"
+                                        max="9.5"
+                                        step="0.5"
+                                        value="6.5"
+                                    >
+                                    <div class="range-value">
+                                        <span id="aestheticScoreValue">6.5</span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="sharpnessInput">
+                                        <strong>Sharpness</strong>
+                                        <span class="tooltip">ℹ️
+                                            <span class="tooltiptext">0 = soft, 1 = natural, 2 = sharp</span>
+                                        </span>
+                                    </label>
+                                    <input
+                                        type="range"
+                                        id="sharpnessInput"
+                                        min="0"
+                                        max="2"
+                                        step="0.1"
+                                        value="1.0"
+                                    >
+                                    <div class="range-value">
+                                        <span id="sharpnessValue">1.0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Negative Prompt -->
+                        <div class="settings-section">
+                            <h4>🚫 Negative Prompt (What to Avoid)</h4>
+                            <div class="form-group">
+                                <textarea
+                                    id="negativePromptInput"
+                                    rows="2"
+                                    placeholder="e.g., blurry, distorted face, low quality, artifacts, watermark"
+                                    maxlength="500"
+                                ></textarea>
+                                <small class="hint">Describe what you DON'T want in the video</small>
+                            </div>
+                        </div>
+
+                        <!-- Advanced Toggles -->
+                        <div class="settings-section">
+                            <h4>⚙️ Advanced Options</h4>
+                            <div class="toggle-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="faceEnhanceInput" checked>
+                                    <span>Enable Face Enhancement</span>
+                                    <span class="tooltip">ℹ️
+                                        <span class="tooltiptext">Apply additional face quality processing</span>
+                                    </span>
+                                </label>
+
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="denoiseInput" checked>
+                                    <span>Enable Denoising</span>
+                                    <span class="tooltip">ℹ️
+                                        <span class="tooltiptext">Reduce noise and artifacts</span>
+                                    </span>
+                                </label>
+
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="temporalSmoothing" checked>
+                                    <span>Temporal Smoothing</span>
+                                    <span class="tooltip">ℹ️
+                                        <span class="tooltiptext">Smoother motion between frames</span>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <p class="hint">💡 Face Detail and Aesthetic Quality have the biggest impact on facial appearance</p>
                     </details>
 
                     <!-- Advanced Options -->

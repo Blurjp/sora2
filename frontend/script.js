@@ -111,13 +111,26 @@ const stepsIndicator = document.getElementById('stepsIndicator');
 const guidanceIndicator = document.getElementById('guidanceIndicator');
 const imgIndicator = document.getElementById('imgIndicator');
 
+// New control elements
+const faceDetailInput = document.getElementById('faceDetailInput');
+const faceDetailValue = document.getElementById('faceDetailValue');
+const faceDetailIndicator = document.getElementById('faceDetailIndicator');
+const aestheticScoreInput = document.getElementById('aestheticScoreInput');
+const aestheticScoreValue = document.getElementById('aestheticScoreValue');
+const sharpnessInput = document.getElementById('sharpnessInput');
+const sharpnessValue = document.getElementById('sharpnessValue');
+const negativePromptInput = document.getElementById('negativePromptInput');
+const faceEnhanceInput = document.getElementById('faceEnhanceInput');
+const denoiseInput = document.getElementById('denoiseInput');
+const temporalSmoothing = document.getElementById('temporalSmoothing');
+
 // Quality presets
 const qualityPresets = {
-    fast: { steps: 50, guidance: 7.0, guidanceImg: 2.0 },
-    balanced: { steps: 100, guidance: 10.0, guidanceImg: 3.0 },
-    high: { steps: 120, guidance: 12.0, guidanceImg: 3.5 },
-    maximum: { steps: 150, guidance: 15.0, guidanceImg: 4.5 },
-    ultra: { steps: 200, guidance: 18.0, guidanceImg: 6.0 }
+    fast: { steps: 50, guidance: 7.0, guidanceImg: 2.0, faceDetail: 2.5, aesthetic: 5.0 },
+    balanced: { steps: 100, guidance: 10.0, guidanceImg: 3.0, faceDetail: 3.5, aesthetic: 6.0 },
+    high: { steps: 120, guidance: 12.0, guidanceImg: 3.5, faceDetail: 4.5, aesthetic: 6.5 },
+    maximum: { steps: 150, guidance: 15.0, guidanceImg: 4.5, faceDetail: 6.0, aesthetic: 7.5 },
+    ultra: { steps: 200, guidance: 18.0, guidanceImg: 6.0, faceDetail: 8.0, aesthetic: 8.5 }
 };
 
 // Update quality indicators
@@ -160,6 +173,19 @@ function updateQualityIndicators() {
     } else {
         imgIndicator.textContent = 'Maximum';
     }
+
+    // Face detail indicator
+    const faceDetail = parseFloat(faceDetailInput.value);
+    if (faceDetail < 3) {
+        faceDetailIndicator.textContent = 'Low';
+        faceDetailIndicator.style.color = '#a0aec0';
+    } else if (faceDetail < 5.5) {
+        faceDetailIndicator.textContent = 'High';
+        faceDetailIndicator.style.color = '#9f7aea';
+    } else {
+        faceDetailIndicator.textContent = 'Maximum';
+        faceDetailIndicator.style.color = '#f56565';
+    }
 }
 
 // Quality preset selection
@@ -177,14 +203,41 @@ qualityPresetInput.addEventListener('change', () => {
         numStepsInput.value = settings.steps;
         guidanceInput.value = settings.guidance;
         guidanceImgInput.value = settings.guidanceImg;
+        faceDetailInput.value = settings.faceDetail;
+        aestheticScoreInput.value = settings.aesthetic;
 
         // Update displayed values
         numStepsValue.textContent = settings.steps;
         guidanceValue.textContent = settings.guidance.toFixed(1);
         guidanceImgValue.textContent = settings.guidanceImg.toFixed(1);
+        faceDetailValue.textContent = settings.faceDetail.toFixed(1);
+        aestheticScoreValue.textContent = settings.aesthetic.toFixed(1);
 
         // Update indicators
         updateQualityIndicators();
+    }
+});
+
+// New slider event listeners
+faceDetailInput.addEventListener('input', () => {
+    faceDetailValue.textContent = parseFloat(faceDetailInput.value).toFixed(1);
+    updateQualityIndicators();
+    if (qualityPresetInput.value !== 'custom') {
+        qualityPresetInput.value = 'custom';
+    }
+});
+
+aestheticScoreInput.addEventListener('input', () => {
+    aestheticScoreValue.textContent = parseFloat(aestheticScoreInput.value).toFixed(1);
+    if (qualityPresetInput.value !== 'custom') {
+        qualityPresetInput.value = 'custom';
+    }
+});
+
+sharpnessInput.addEventListener('input', () => {
+    sharpnessValue.textContent = parseFloat(sharpnessInput.value).toFixed(1);
+    if (qualityPresetInput.value !== 'custom') {
+        qualityPresetInput.value = 'custom';
     }
 });
 
@@ -241,6 +294,21 @@ videoForm.addEventListener('submit', async (e) => {
     formData.append('num_steps', numStepsInput.value);
     formData.append('guidance', guidanceInput.value);
     formData.append('guidance_img', guidanceImgInput.value);
+
+    // Facial and detail enhancement
+    formData.append('face_detail', faceDetailInput.value);
+    formData.append('aesthetic_score', aestheticScoreInput.value);
+    formData.append('sharpness', sharpnessInput.value);
+
+    // Negative prompt
+    if (negativePromptInput.value.trim()) {
+        formData.append('negative_prompt', negativePromptInput.value.trim());
+    }
+
+    // Advanced toggles
+    formData.append('face_enhance', faceEnhanceInput.checked);
+    formData.append('denoise', denoiseInput.checked);
+    formData.append('temporal_smoothing', temporalSmoothing.checked);
 
     const seed = document.getElementById('seedInput').value;
     if (seed) {
