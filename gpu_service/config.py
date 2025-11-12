@@ -44,7 +44,7 @@ MODEL_CONFIG_PATH = f"configs/diffusion/inference/{MODEL_RESOLUTION}.py"
 # Checkpoint configuration
 # Optional: Override model checkpoint via environment variable
 # If not set, the config file's from_pretrained will be used
-# Example: CHECKPOINT_PATH=hpcai-tech/OpenSora-STDiT-v3/model.safetensors
+# Example: CHECKPOINT_PATH=hpcai-tech/Open-Sora-v2/Open_Sora_v2.safetensors
 CHECKPOINT_PATH = os.environ.get("CHECKPOINT_PATH", None)
 
 # Cleanup settings

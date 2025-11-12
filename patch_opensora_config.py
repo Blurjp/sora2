@@ -2,7 +2,7 @@
 """
 Patch Open-Sora inference configs to point each component at the correct
 Hugging Face repo/file. Handles legacy ./ckpts paths, subfolder references,
-and previously incorrect OpenSora-STDiT-v3 tree URLs.
+and previously incorrect checkpoint paths.
 """
 
 import os
@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 import site
 
-MODEL_PATH = "hpcai-tech/OpenSora-STDiT-v3/model.safetensors"
+MODEL_PATH = "hpcai-tech/Open-Sora-v2/Open_Sora_v2.safetensors"
 VAE_PATH = "hpcai-tech/Open-Sora-v2/hunyuan_vae.safetensors"
 T5_PATH = "google/t5-v1_1-xxl"
 CLIP_PATH = "openai/clip-vit-large-patch14"
