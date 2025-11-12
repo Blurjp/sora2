@@ -47,6 +47,7 @@ cat >> "$ENV_FILE" << 'EOF'
 # MAXIMUM QUALITY SETTINGS (applied by enable_max_quality.sh)
 # ═══════════════════════════════════════════════════════════════════
 # These settings provide the highest quality output but take longer
+# For even better quality, use EXTREME (250 steps) or INSANE (300 steps)
 DEFAULT_NUM_STEPS=150         # Maximum diffusion steps for best detail
 DEFAULT_GUIDANCE=15.0         # Very strong prompt adherence
 DEFAULT_GUIDANCE_IMG=4.5      # Maximum face/image preservation

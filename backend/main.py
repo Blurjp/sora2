@@ -134,6 +134,13 @@ async def generate_video(
     num_steps: int = Form(DEFAULT_NUM_STEPS, description=f"Diffusion steps ({MIN_NUM_STEPS}-{MAX_NUM_STEPS}, more=better quality)"),
     guidance: float = Form(DEFAULT_GUIDANCE, description=f"Text guidance ({MIN_GUIDANCE}-{MAX_GUIDANCE}, higher=follows prompt more)"),
     guidance_img: float = Form(DEFAULT_GUIDANCE_IMG, description=f"Image guidance ({MIN_GUIDANCE_IMG}-{MAX_GUIDANCE_IMG}, lower=more freedom)"),
+    face_detail: float = Form(4.5, description="Face detail level (0.5-10, higher=sharper faces)"),
+    aesthetic_score: float = Form(6.5, description="Aesthetic quality (4-9.5, higher=better visual appeal)"),
+    sharpness: float = Form(1.0, description="Sharpness level (0=soft, 1=natural, 2=sharp)"),
+    negative_prompt: Optional[str] = Form(None, description="What to avoid in the video"),
+    face_enhance: bool = Form(True, description="Enable face enhancement"),
+    denoise: bool = Form(True, description="Enable denoising"),
+    temporal_smoothing: bool = Form(True, description="Enable temporal smoothing"),
     seed: Optional[int] = Form(None, description="Random seed"),
     refine_prompt: bool = Form(False, description="Refine prompt with AI")
 ):
@@ -226,6 +233,13 @@ async def generate_video(
             num_steps=num_steps,
             guidance=guidance,
             guidance_img=guidance_img,
+            face_detail=face_detail,
+            aesthetic_score=aesthetic_score,
+            sharpness=sharpness,
+            negative_prompt=negative_prompt,
+            face_enhance=face_enhance,
+            denoise=denoise,
+            temporal_smoothing=temporal_smoothing,
             seed=seed,
             refine_prompt=refine_prompt,
         )

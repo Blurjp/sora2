@@ -137,6 +137,9 @@ curl -X POST "http://your-gpu:8001/api/generate" \
 | **Balanced** | 100 | 10.0 | 2x | Great |
 | **High** | 120 | 12.0 | 2.5x | Excellent |
 | **Maximum** | 150 | 15.0 | 3x | Best |
+| **Ultra** | 200 | 18.0 | 4x | Outstanding |
+| **Extreme** | 250 | 19.5 | 5x | Near Perfect |
+| **INSANE** | 300 | 20.0 | 6x | Absolute Best |
 
 ---
 

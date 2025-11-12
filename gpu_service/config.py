@@ -26,7 +26,7 @@ FRAMES_PER_SECOND = 8
 # Advanced generation parameters (can be overridden per request)
 DEFAULT_NUM_STEPS = 120  # Diffusion steps (more = better quality but slower) - HIGH QUALITY
 MIN_NUM_STEPS = 20
-MAX_NUM_STEPS = 200  # Increased for ultra-high quality mode
+MAX_NUM_STEPS = 300  # Increased for INSANE quality mode
 
 DEFAULT_GUIDANCE = 12.0  # Text guidance strength (higher = follows prompt more) - STRONG adherence
 MIN_GUIDANCE = 1.0

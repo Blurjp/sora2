@@ -130,6 +130,8 @@
                             <option value="high" selected>✨ High Quality (120 steps, ~3-4 min) - Recommended</option>
                             <option value="maximum">🔥 Maximum (150 steps, ~4-5 min)</option>
                             <option value="ultra">💎 Ultra (200 steps, ~5-7 min)</option>
+                            <option value="extreme">🌟 Extreme (250 steps, ~7-9 min) - Absolute Best</option>
+                            <option value="insane">⚡🔥 INSANE (300 steps, ~10-12 min) - GPU Destroyer</option>
                             <option value="custom">⚙️ Custom Settings</option>
                         </select>
                         <p class="hint">💡 Higher quality takes longer but produces better results</p>
@@ -147,14 +149,14 @@
                                     <label for="numStepsInput">
                                         <strong>Quality Steps</strong>
                                         <span class="tooltip">ℹ️
-                                            <span class="tooltiptext">More steps = better quality but slower (20-200)</span>
+                                            <span class="tooltiptext">More steps = better quality but slower (20-300)</span>
                                         </span>
                                     </label>
                                     <input
                                         type="range"
                                         id="numStepsInput"
                                         min="20"
-                                        max="200"
+                                        max="300"
                                         step="5"
                                         value="120"
                                     >

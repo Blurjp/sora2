@@ -130,7 +130,9 @@ const qualityPresets = {
     balanced: { steps: 100, guidance: 10.0, guidanceImg: 3.0, faceDetail: 3.5, aesthetic: 6.0 },
     high: { steps: 120, guidance: 12.0, guidanceImg: 3.5, faceDetail: 4.5, aesthetic: 6.5 },
     maximum: { steps: 150, guidance: 15.0, guidanceImg: 4.5, faceDetail: 6.0, aesthetic: 7.5 },
-    ultra: { steps: 200, guidance: 18.0, guidanceImg: 6.0, faceDetail: 8.0, aesthetic: 8.5 }
+    ultra: { steps: 200, guidance: 18.0, guidanceImg: 6.0, faceDetail: 8.0, aesthetic: 8.5 },
+    extreme: { steps: 250, guidance: 19.5, guidanceImg: 8.0, faceDetail: 9.5, aesthetic: 9.0 },
+    insane: { steps: 300, guidance: 20.0, guidanceImg: 10.0, faceDetail: 10.0, aesthetic: 9.5 }
 };
 
 // Update quality indicators
@@ -149,9 +151,18 @@ function updateQualityIndicators() {
     } else if (steps < 175) {
         stepsIndicator.textContent = 'Maximum';
         stepsIndicator.style.color = '#ed8936';
-    } else {
+    } else if (steps < 225) {
         stepsIndicator.textContent = 'Ultra';
         stepsIndicator.style.color = '#f56565';
+    } else if (steps < 275) {
+        stepsIndicator.textContent = 'Extreme';
+        stepsIndicator.style.color = '#d53f8c';
+        stepsIndicator.style.fontWeight = '700';
+    } else {
+        stepsIndicator.textContent = 'INSANE';
+        stepsIndicator.style.color = '#c53030';
+        stepsIndicator.style.fontWeight = '700';
+        stepsIndicator.style.textShadow = '0 0 10px rgba(197, 48, 48, 0.5)';
     }
 
     // Guidance indicator
