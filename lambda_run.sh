@@ -162,6 +162,7 @@ if [ -f "$CONFIG_FILE" ]; then
             -e "s|from_pretrained.*=.*['\"]\\./ckpts/Open_Sora_v2\\.safetensors['\"]|from_pretrained=\"hpcai-tech/OpenSora-STDiT-v3/model.safetensors\"|g" \
             -e "s|from_pretrained[[:space:]]*=[[:space:]]*['\"]hpcai-tech/Open-Sora-v2[^'\"]*['\"][[:space:]]*,[[:space:]]*subfolder[[:space:]]*=[[:space:]]*['\"]hunyuan_vae['\"]|from_pretrained=\"hpcai-tech/Open-Sora-v2/hunyuan_vae.safetensors\"|g" \
             -e "s|from_pretrained[[:space:]]*=[[:space:]]*['\"]hpcai-tech/Open-Sora-v2[^'\"]*['\"][[:space:]]*,[[:space:]]*subfolder[[:space:]]*=[[:space:]]*['\"]model['\"]|from_pretrained=\"hpcai-tech/OpenSora-STDiT-v3/model.safetensors\"|g" \
+            -e 's|type="flux"|type="stdit3"|g' \
             "$CONFIG_FILE"
 
         echo "✓ Config paths fixed"

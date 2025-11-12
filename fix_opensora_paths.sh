@@ -30,6 +30,7 @@ sed -i \
     -e "s|from_pretrained.*=.*['\"]\\./ckpts/google/t5-v1_1-xxl['\"]|from_pretrained=\"google/t5-v1_1-xxl\"|g" \
     -e "s|from_pretrained.*=.*['\"]\\./ckpts/openai/clip-vit-large-patch14['\"]|from_pretrained=\"openai/clip-vit-large-patch14\"|g" \
     -e "s|from_pretrained.*=.*['\"]\\./ckpts/Open_Sora_v2\\.safetensors['\"]|from_pretrained=\"hpcai-tech/OpenSora-STDiT-v3/tree/main/model.safetensors\"|g" \
+    -e 's|type="flux"|type="stdit3"|g' \
     "$CONFIG_FILE"
 
 echo "✓ Fixed component paths:"

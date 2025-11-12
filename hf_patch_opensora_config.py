@@ -98,6 +98,14 @@ def patch_file(path: Path, checkpoint: str) -> bool:
     text = re.sub(r"checkpoint[_-]?path\s*=\s*['\"]\./ckpts/[^'\"]+['\"]",
                   f'checkpoint_path="{checkpoint}"', text, flags=re.IGNORECASE)
 
+    # Pattern 8: Fix model type from flux to stdit3 for STDiT-v3 checkpoint
+    if 'STDiT-v3' in checkpoint or 'STDiT-v3' in text:
+        flux_type = r'type\s*=\s*["\']flux["\']'
+        if re.search(flux_type, text):
+            text = re.sub(flux_type, 'type="stdit3"', text)
+            if "model type" not in changes_made:
+                changes_made.append("model type (flux->stdit3)")
+
     if text != orig:
         path.write_text(text)
         components = ", ".join(changes_made) if changes_made else "paths"
