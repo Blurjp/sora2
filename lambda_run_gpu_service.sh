@@ -14,6 +14,17 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Load environment variables from .env so manual runs match systemd settings
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE="$SCRIPT_DIR/.env"
+if [ -f "$ENV_FILE" ]; then
+    echo -e "${YELLOW}Loading environment from ${ENV_FILE}${NC}"
+    set -a
+    # shellcheck disable=SC1090
+    source "$ENV_FILE"
+    set +a
+fi
+
 # Get instance IP
 INSTANCE_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4 || echo "localhost")
 
@@ -77,7 +88,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 # Start the GPU service
-cd "$(dirname "$0")"
+cd "$SCRIPT_DIR"
 
 # Export environment variables
 export OPENSORA_PATH="$OPENSORA_PATH"
@@ -89,7 +100,8 @@ fi
 
 # Fix Open-Sora config paths automatically
 echo -e "${BLUE}Checking Open-Sora configuration...${NC}"
-CONFIG_FILE="$OPENSORA_PATH/configs/diffusion/inference/256px.py"
+MODEL_RESOLUTION_EFFECTIVE="${MODEL_RESOLUTION:-768px}"
+CONFIG_FILE="$OPENSORA_PATH/configs/diffusion/inference/${MODEL_RESOLUTION_EFFECTIVE}.py"
 
 if [ -f "$CONFIG_FILE" ]; then
     # Check if config needs fixing (contains ./ckpts/ paths)

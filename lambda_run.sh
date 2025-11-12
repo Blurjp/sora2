@@ -10,6 +10,17 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
+# Load environment variables from .env so manual runs mirror systemd defaults
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE="$SCRIPT_DIR/.env"
+if [ -f "$ENV_FILE" ]; then
+    echo -e "${YELLOW}Loading environment from ${ENV_FILE}${NC}"
+    set -a
+    # shellcheck disable=SC1090
+    source "$ENV_FILE"
+    set +a
+fi
+
 # Set environment
 export OPENSORA_PATH="${OPENSORA_PATH:-$HOME/Open-Sora}"
 
@@ -82,7 +93,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 # Start the service
-cd "$(dirname "$0")"
+cd "$SCRIPT_DIR"
 
 # Pre-flight dependency check
 echo "Checking dependencies..."
@@ -132,7 +143,8 @@ fi
 
 # Fix Open-Sora config paths automatically
 echo "Checking Open-Sora configuration..."
-CONFIG_FILE="$OPENSORA_PATH/configs/diffusion/inference/256px.py"
+MODEL_RESOLUTION_EFFECTIVE="${MODEL_RESOLUTION:-768px}"
+CONFIG_FILE="$OPENSORA_PATH/configs/diffusion/inference/${MODEL_RESOLUTION_EFFECTIVE}.py"
 
 if [ -f "$CONFIG_FILE" ]; then
     # Check if config needs fixing (contains ./ckpts/ paths)

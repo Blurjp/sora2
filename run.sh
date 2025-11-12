@@ -2,6 +2,16 @@
 
 # Run Open-Sora Video Generation Service
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE="$SCRIPT_DIR/.env"
+if [ -f "$ENV_FILE" ]; then
+    echo "Loading environment from $ENV_FILE"
+    set -a
+    # shellcheck disable=SC1090
+    source "$ENV_FILE"
+    set +a
+fi
+
 # Set Open-Sora path if not already set
 if [ -z "$OPENSORA_PATH" ]; then
     export OPENSORA_PATH="${OPENSORA_PATH:-$HOME/Open-Sora}"
