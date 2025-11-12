@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
 Patch Open-Sora inference configs to use a valid Hugging Face checkpoint path.
-It replaces local './ckpts/...' references with a HF path of the form
-  org/repo/filename
-Default: hpcai-tech/OpenSora-STDiT-v3/model.safetensors
+It replaces local './ckpts/...' references and old subfolder parameters with correct HF paths.
+
+Default: hpcai-tech/Open-Sora-v2/Open_Sora_v2.safetensors (flux/MMDiT architecture)
 Override with env CHECKPOINT_PATH if needed.
 """
 import os
