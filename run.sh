@@ -69,7 +69,7 @@ kill_processes "uvicorn.*gpu_service" "uvicorn workers"
 
 # Kill any Python processes using our ports
 for port in 8000 8001; do
-    local port_pid=$(lsof -ti:$port 2>/dev/null)
+    port_pid=$(lsof -ti:$port 2>/dev/null)
     if [ ! -z "$port_pid" ]; then
         echo "  Freeing port $port (PID: $port_pid)..."
         kill -15 $port_pid 2>/dev/null && sleep 1
