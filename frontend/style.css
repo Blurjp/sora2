@@ -558,6 +558,52 @@ footer a {
     font-weight: 600;
 }
 
+/* Negative Prompt Presets */
+.negative-prompt-presets {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+.preset-btn {
+    padding: 6px 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    background: white;
+    color: #4a5568;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.preset-btn:hover {
+    border-color: #cbd5e0;
+    background: #f7fafc;
+}
+
+.preset-btn.active {
+    border-color: #667eea;
+    background: #667eea;
+    color: white;
+}
+
+.preset-btn[data-preset="clear"] {
+    border-color: #fc8181;
+    color: #c53030;
+}
+
+.preset-btn[data-preset="clear"]:hover {
+    background: #fff5f5;
+}
+
+.preset-btn[data-preset="clear"].active {
+    background: #fc8181;
+    border-color: #fc8181;
+    color: white;
+}
+
 /* Tooltip */
 .tooltip {
     position: relative;

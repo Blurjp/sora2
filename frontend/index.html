@@ -313,10 +313,15 @@
                                 <textarea
                                     id="negativePromptInput"
                                     rows="2"
-                                    placeholder="e.g., blurry, distorted face, low quality, artifacts, watermark"
                                     maxlength="500"
-                                ></textarea>
-                                <small class="hint">Describe what you DON'T want in the video</small>
+                                >blurry, distorted face, deformed, ugly, low quality, pixelated, artifacts, watermark, text, bad anatomy, bad proportions</textarea>
+                                <div class="negative-prompt-presets">
+                                    <button type="button" class="preset-btn" data-preset="default">Default</button>
+                                    <button type="button" class="preset-btn" data-preset="faces">Faces Focus</button>
+                                    <button type="button" class="preset-btn" data-preset="cinematic">Cinematic</button>
+                                    <button type="button" class="preset-btn" data-preset="clear">Clear</button>
+                                </div>
+                                <small class="hint">💡 Pre-filled with common quality issues to avoid</small>
                             </div>
                         </div>
 

@@ -311,6 +311,29 @@ guidanceImgInput.addEventListener('input', () => {
 // Initialize indicators on page load
 updateQualityIndicators();
 
+// Negative Prompt Presets
+const negativePromptPresets = {
+    default: "blurry, distorted face, deformed, ugly, low quality, pixelated, artifacts, watermark, text, bad anatomy, bad proportions",
+    faces: "blurry face, distorted face, deformed face, asymmetric face, bad eyes, closed eyes, weird eyes, bad teeth, deformed hands, extra fingers, missing fingers, bad anatomy, disfigured",
+    cinematic: "low quality, pixelated, blurry, overexposed, underexposed, shaky, amateur, grainy, compression artifacts, watermark, logo, text overlay",
+    clear: ""
+};
+
+document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const preset = btn.dataset.preset;
+        negativePromptInput.value = negativePromptPresets[preset];
+
+        // Visual feedback
+        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    });
+});
+
+// Set default preset button as active on load
+document.querySelector('.preset-btn[data-preset="default"]').classList.add('active');
+
 // Form submission
 videoForm.addEventListener('submit', async (e) => {
     e.preventDefault();
