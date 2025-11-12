@@ -255,26 +255,15 @@ class VideoGenerator:
                 # Prepare output path
                 output_path = OUTPUT_DIR / f"{video_id}.mp4"
 
-                # Create temporary config with custom parameters
-                config_template_path = Path(self.opensora_path) / MODEL_CONFIG_PATH
-                temp_config_path = job_output_dir / "config_temp.py"
+                # Use config file directly from Open-Sora directory
+                # Don't copy it - copying breaks _base_ imports in mmengine
+                config_file_path = Path(self.opensora_path) / MODEL_CONFIG_PATH
 
-                # Read base config and modify parameters
-                with open(config_template_path, 'r') as f:
-                    config_content = f.read()
+                logger.info(f"Using config: {MODEL_CONFIG_PATH} with custom parameters")
+                logger.info(f"Quality settings: steps={num_steps}, guidance={guidance}, guidance_img={guidance_img}")
 
-                # Override sampling parameters
-                config_content = re.sub(r'num_steps\s*=\s*[0-9]+', f'num_steps={num_steps}', config_content)
-                config_content = re.sub(r'(?<!_)guidance\s*=\s*[0-9.]+', f'guidance={guidance}', config_content)
-                config_content = re.sub(r'guidance_img\s*=\s*[0-9.]+', f'guidance_img={guidance_img}', config_content)
-
-                # Write temporary config
-                with open(temp_config_path, 'w') as f:
-                    f.write(config_content)
-
-                logger.info(f"Using temporary config with custom parameters")
-
-                # Build command - use temporary config
+                # Build command - use config from Open-Sora directory
+                # Pass quality parameters via command line to override config defaults
                 # IMPORTANT: Removed --offload for MAXIMUM GPU utilization
                 # Offloading moves models between CPU/GPU which reduces performance
                 # Only enable offload if you have low VRAM (<24GB)
@@ -283,7 +272,9 @@ class VideoGenerator:
                     "--nproc_per_node", "1",
                     "--standalone",
                     "scripts/diffusion/inference.py",
-                    str(temp_config_path),
+                    str(config_file_path),
+                    "--num-sampling-steps", str(num_steps),
+                    "--cfg-scale", str(guidance),
                     "--cond_type", "i2v_head",
                     "--ref", str(image_path),
                     "--prompt", enhanced_prompt,  # Use enhanced prompt
