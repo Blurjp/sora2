@@ -282,8 +282,9 @@ class VideoGenerator:
                 if enhanced_prompt != prompt:
                     logger.info(f"Enhanced prompt: {enhanced_prompt}")
 
-                # Use negative prompt if provided, otherwise no restrictions
-                neg_prompt = negative_prompt or ""  # No content restrictions
+                # Use negative prompt if provided, otherwise use quality-focused defaults
+                default_negative = "low quality, blurry, distorted, watermark, text, deformed, ugly, duplicate, morbid, mutilated, out of frame, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, bad anatomy, bad proportions, extra limbs, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck"
+                neg_prompt = negative_prompt if negative_prompt else default_negative
 
                 # Log parameters
                 logger.info(f"=== Starting {mode.upper()} video generation: {video_id} ===")

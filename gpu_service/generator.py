@@ -273,12 +273,13 @@ class VideoGenerator:
 
                 start_time = time.time()
 
-                # Run generation - no content restrictions
+                # Run generation with quality-focused negative prompt
                 logger.info("Starting WAN inference...")
+                default_negative = "low quality, blurry, distorted, watermark, text, deformed, ugly, duplicate, morbid, mutilated, out of frame, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, bad anatomy, bad proportions, extra limbs, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck"
                 output = self._pipe(
                     image=image,
                     prompt=enhanced_prompt,
-                    negative_prompt="",  # No negative prompt restrictions
+                    negative_prompt=default_negative,
                     height=height,
                     width=width,
                     num_frames=num_frames,
