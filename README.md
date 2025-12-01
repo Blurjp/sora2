@@ -1,138 +1,124 @@
-# Open-Sora 2.0 Video Generation Service
+# WAN 2.2 Video Generation Service
 
-A simple web-based service for generating 10-20 second videos using Open-Sora 2.0, with image and text input.
+A web-based service for generating high-quality videos using Alibaba's WAN 2.2 model, with image and text input.
 
 ## Features
 
-- 🎬 Generate high-quality videos (10-20 seconds)
-- 🖼️ Image + Text conditioning for better control
-- 🚀 Simple web interface
-- 📥 Direct video download
-- 🔓 No content restrictions
+- Generate high-quality 720P videos (up to 5 seconds at 16fps)
+- Image-to-Video (I2V) generation with reference image
+- Text-to-Video (T2V) generation
+- Simple web interface
+- Direct video download
+- Diffusers integration for easy deployment
+
+## Model Options
+
+| Model | Parameters | VRAM Required | Resolution | Best For |
+|-------|------------|---------------|------------|----------|
+| **I2V-A14B** | 14B (MoE) | 80GB | 1280x720 | H100, A100 enterprise GPUs |
+| **TI2V-5B** | 5B | 24GB | 1280x704 | RTX 4090, consumer GPUs |
 
 ## Architecture
 
 - **Backend**: FastAPI (Python)
 - **Frontend**: Vanilla HTML/CSS/JavaScript
-- **Model**: Open-Sora 2.0 (11B model)
+- **Model**: WAN 2.2 via HuggingFace Diffusers
 
 ## Prerequisites
 
 - Python 3.10+
-- CUDA-compatible GPU (H100/H800 recommended)
-- 40GB+ VRAM for optimal performance
+- CUDA-compatible GPU
+  - 80GB+ VRAM for I2V-A14B (recommended)
+  - 24GB+ VRAM for TI2V-5B
 - PyTorch >= 2.4.0
 
-## Quick Start Options
+## Quick Start
 
-### Option 1: Remote GPU (Recommended) ⚡⚡⚡
+### Option 1: Remote GPU (Recommended)
 
-**NEW: Run frontend & backend locally, use remote GPU for generation!**
-
-This is the most cost-effective and flexible setup:
-- ✅ No local GPU required
-- ✅ Pay for GPU only when generating
-- ✅ Works on Windows, Mac, Linux
-- ✅ Quick 5-minute setup
+Run frontend locally, use remote GPU for generation:
 
 ```bash
-# On Lambda GPU instance
-./lambda_run_gpu_service.sh --api-key your-secret-key
+# On GPU instance (Lambda Labs, etc.)
+./gpu_setup.sh
+sudo systemctl start wan-gpu
 
 # On your local machine
-./run_local.sh --gpu-url http://lambda-ip:8001 --api-key your-secret-key
+./run_local.sh --gpu-url http://gpu-instance-ip:8001
 
 # Open browser
 http://localhost:8000
 ```
 
-**Complete guide**: See [QUICKSTART_REMOTE.md](QUICKSTART_REMOTE.md) and [REMOTE_GPU_SETUP.md](REMOTE_GPU_SETUP.md)
+### Option 2: All-in-One Setup
 
-### Option 2: All-in-One Lambda Instance
-
-Run everything (frontend + backend + GPU) on a single Lambda instance.
+Run everything on a single GPU instance:
 
 ```bash
-# 1. Launch instance at https://cloud.lambdalabs.com
-# 2. SSH into instance
+# SSH into GPU instance
 ssh ubuntu@<instance-ip>
 
-# 3. Run automated setup
-git clone <your-repo-url> ~/sora2
+# Clone and setup
+git clone https://github.com/Blurjp/sora2.git ~/sora2
 cd ~/sora2
-./lambda_setup.sh
+./gpu_setup.sh
 
-# 4. Start service
-./lambda_run.sh
+# Start service
+sudo systemctl start wan-gpu
 ```
-
-**Complete guide**: See [LAMBDA_LABS.md](LAMBDA_LABS.md)
 
 ### Option 3: Local Installation
 
-For local GPU servers or other cloud providers.
-
-## Installation
-
-### 1. Clone Open-Sora Repository
-
 ```bash
-git clone https://github.com/hpcaitech/Open-Sora.git
-cd Open-Sora
-pip install -v .
-pip install xformers==0.0.27.post2 --index-url https://download.pytorch.org/whl/cu121
-pip install flash-attn --no-build-isolation
-```
+# Clone repository
+git clone https://github.com/Blurjp/sora2.git
+cd sora2
 
-### 2. Install Service Dependencies
-
-```bash
-cd /path/to/sora2
+# Install dependencies
 pip install -r requirements.txt
+
+# Configure environment
+cp .env.example .env
+# Edit .env to set WAN_MODEL_ID based on your GPU
+
+# Start service
+python -m gpu_service.main
 ```
 
-### 3. Configure Open-Sora Path
+## Configuration
 
-Edit `backend/config.py` and set the `OPENSORA_PATH` to your Open-Sora installation directory.
-
-## Usage
-
-### Start the Service
+Edit `.env` or set environment variables:
 
 ```bash
-# From the project root
-python backend/main.py
+# Model selection (based on GPU VRAM)
+WAN_MODEL_ID=Wan-AI/Wan2.2-I2V-A14B-Diffusers  # 80GB VRAM
+# WAN_MODEL_ID=Wan-AI/Wan2.2-TI2V-5B-Diffusers  # 24GB VRAM
+
+# Quality settings
+DEFAULT_NUM_STEPS=40          # Diffusion steps (20-100)
+DEFAULT_GUIDANCE=5.0          # Text guidance (1.0-15.0)
+DEFAULT_GUIDANCE_IMG=3.5      # Image guidance (0.5-10.0)
+
+# Memory optimization (for low VRAM)
+WAN_ENABLE_MODEL_CPU_OFFLOAD=false
+WAN_ENABLE_VAE_SLICING=true
 ```
 
-The service will start on `http://localhost:8000`
+## API Endpoints
 
-### Using the Web Interface
-
-1. Open `http://localhost:8000` in your browser
-2. Upload an input image (PNG/JPG)
-3. Enter your text prompt
-4. Configure video settings:
-   - Duration (10-20 seconds)
-   - Aspect ratio (16:9, 9:16, 1:1, 2.39:1)
-   - Motion intensity
-5. Click "Generate Video"
-6. Wait for generation (1-5 minutes depending on GPU)
-7. Preview and download your video
-
-### API Endpoints
-
-#### Generate Video
+### Generate Video
 
 ```bash
 POST /api/generate
 Content-Type: multipart/form-data
 
 Parameters:
-- image: File (required)
+- image: File (required for I2V)
 - prompt: string (required)
-- duration: integer (10-20, default: 15)
+- duration: integer (3-10, default: 5)
 - aspect_ratio: string (default: "16:9")
-- motion_score: float (0.0-1.0, default: 0.5)
+- num_steps: integer (default: 40)
+- guidance: float (default: 5.0)
 
 Response:
 {
@@ -141,7 +127,7 @@ Response:
 }
 ```
 
-#### Check Status
+### Check Status
 
 ```bash
 GET /api/status/{video_id}
@@ -153,57 +139,67 @@ Response:
 }
 ```
 
-#### Download Video
+### Download Video
 
 ```bash
 GET /api/download/{video_id}
 ```
 
-## Configuration
+## Performance
 
-Edit `backend/config.py`:
+| Model | GPU | Generation Time (5s video) |
+|-------|-----|---------------------------|
+| I2V-A14B | H100 80GB | ~2-3 minutes |
+| TI2V-5B | RTX 4090 | ~5-8 minutes |
 
-```python
-OPENSORA_PATH = "/path/to/Open-Sora"
-OUTPUT_DIR = "./outputs"
-MAX_CONCURRENT_JOBS = 2
-ENABLE_QUEUE = True
+**Note**: First run downloads the model (~30-60GB) from HuggingFace.
+
+## Memory Optimization
+
+For GPUs with limited VRAM:
+
+```bash
+# Enable CPU offloading
+WAN_ENABLE_MODEL_CPU_OFFLOAD=true
+
+# Enable VAE optimizations
+WAN_ENABLE_VAE_SLICING=true
+WAN_ENABLE_VAE_TILING=true
 ```
-
-## Performance Notes
-
-- **256px**: ~60 seconds on single H100/H800
-- **768px**: ~276 seconds with 8 GPUs
-- Use `--offload True` for memory optimization on GPUs with <40GB VRAM
-
-## Deployment Options
-
-- **Lambda Labs** (Recommended): See [LAMBDA_LABS.md](LAMBDA_LABS.md) - Quick 5-minute setup
-- **Docker**: See [DEPLOYMENT.md](DEPLOYMENT.md#option-3-docker-deployment)
-- **Production**: See [DEPLOYMENT.md](DEPLOYMENT.md) for systemd, nginx, SSL setup
 
 ## Troubleshooting
 
 ### Out of Memory
 
-Add `--offload True` to the generation command in `backend/generator.py`
-
-### Slow Generation
-
-- Use multiple GPUs with `--nproc_per_node`
-- Reduce resolution or frame count
-- Enable sequence parallelism
+1. Switch to TI2V-5B model (requires only 24GB)
+2. Enable `WAN_ENABLE_MODEL_CPU_OFFLOAD=true`
+3. Reduce `num_frames` or resolution
 
 ### Model Download Issues
 
 Models are downloaded automatically from HuggingFace. If you experience issues:
-- Use ModelScope mirror (Chinese users)
-- Download manually and update config paths
+- Check your internet connection
+- Set `HF_HUB_OFFLINE=1` after initial download
+- Use `huggingface-cli download` manually
+
+### Slow Generation
+
+- Use I2V-A14B on H100 for fastest results
+- Reduce `num_steps` (40 is usually sufficient)
+- Ensure VAE slicing is enabled
 
 ## License
 
-This service wrapper is provided as-is. Open-Sora 2.0 is licensed under Apache 2.0.
+This service wrapper is provided as-is. WAN 2.2 is licensed under Apache 2.0.
 
 ## Credits
 
-- [Open-Sora](https://github.com/hpcaitech/Open-Sora) by HPC-AI Tech
+- [WAN Video Models](https://github.com/Wan-Video/Wan2.2) by Alibaba
+- [HuggingFace Diffusers](https://huggingface.co/docs/diffusers)
+
+## Sources
+
+- [WAN 2.2 GitHub](https://github.com/Wan-Video/Wan2.2)
+- [WAN 2.2 I2V-A14B on HuggingFace](https://huggingface.co/Wan-AI/Wan2.2-I2V-A14B-Diffusers)
+- [WAN 2.2 TI2V-5B on HuggingFace](https://huggingface.co/Wan-AI/Wan2.2-TI2V-5B-Diffusers)
+- [Diffusers WAN Documentation](https://huggingface.co/docs/diffusers/main/api/pipelines/wan)

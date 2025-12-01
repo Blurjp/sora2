@@ -1,26 +1,33 @@
 """
-Open-Sora 2.0 Video Generator Wrapper
+WAN 2.2 Video Generator Wrapper
 """
-import subprocess
 import asyncio
 import os
 import re
 import logging
 from pathlib import Path
 from typing import Optional, Dict
-import json
 import time
+import gc
+
+import torch
+from PIL import Image
 
 from .config import (
-    OPENSORA_PATH,
     OUTPUT_DIR,
     TEMP_DIR,
     FRAMES_PER_SECOND,
-    MODEL_CONFIG_PATH,
-    CHECKPOINT_PATH,
     DEFAULT_NUM_STEPS,
     DEFAULT_GUIDANCE,
     DEFAULT_GUIDANCE_IMG,
+    WAN_MODEL_ID,
+    WAN_MODEL_VARIANT,
+    WAN_WIDTH,
+    WAN_HEIGHT,
+    WAN_ENABLE_MODEL_CPU_OFFLOAD,
+    WAN_ENABLE_VAE_SLICING,
+    WAN_ENABLE_VAE_TILING,
+    WAN_TORCH_DTYPE,
 )
 
 logger = logging.getLogger(__name__)
@@ -30,46 +37,102 @@ VERBOSE_GENERATION_LOGS = os.environ.get("VERBOSE_GENERATION_LOGS", "false").low
 
 
 class VideoGenerator:
-    """Wrapper for Open-Sora 2.0 video generation"""
+    """Wrapper for WAN 2.2 video generation using diffusers"""
 
     def __init__(self):
-        self.opensora_path = Path(OPENSORA_PATH)
         self.jobs: Dict[str, Dict] = {}
         self._generation_lock = asyncio.Lock()
         self._current_task: Optional[asyncio.Task] = None
+        self._pipe = None
+        self._model_loaded = False
+
+        # Determine torch dtype
+        if WAN_TORCH_DTYPE == "float16":
+            self._dtype = torch.float16
+        else:
+            self._dtype = torch.bfloat16
+
+        logger.info("WAN 2.2 Video Generator initialized")
+        logger.info(f"Model ID: {WAN_MODEL_ID}")
+        logger.info(f"Resolution: {WAN_WIDTH}x{WAN_HEIGHT}")
+
+    def _load_model(self):
+        """Load the WAN model (lazy loading on first use)"""
+        if self._model_loaded:
+            return
+
+        logger.info(f"Loading WAN 2.2 model: {WAN_MODEL_ID}")
+        start_time = time.time()
+
+        try:
+            # Determine which pipeline to use based on model ID
+            if "I2V" in WAN_MODEL_ID:
+                from diffusers import WanImageToVideoPipeline
+                self._pipe = WanImageToVideoPipeline.from_pretrained(
+                    WAN_MODEL_ID,
+                    torch_dtype=self._dtype,
+                )
+                self._pipeline_type = "i2v"
+            elif "TI2V" in WAN_MODEL_ID:
+                from diffusers import WanImageToVideoPipeline
+                self._pipe = WanImageToVideoPipeline.from_pretrained(
+                    WAN_MODEL_ID,
+                    torch_dtype=self._dtype,
+                )
+                self._pipeline_type = "ti2v"
+            else:
+                from diffusers import WanPipeline
+                self._pipe = WanPipeline.from_pretrained(
+                    WAN_MODEL_ID,
+                    torch_dtype=self._dtype,
+                )
+                self._pipeline_type = "t2v"
+
+            # Apply memory optimizations
+            if WAN_ENABLE_MODEL_CPU_OFFLOAD:
+                logger.info("Enabling model CPU offload")
+                self._pipe.enable_model_cpu_offload()
+            else:
+                self._pipe = self._pipe.to("cuda")
+
+            if WAN_ENABLE_VAE_SLICING:
+                self._pipe.enable_vae_slicing()
+
+            if WAN_ENABLE_VAE_TILING:
+                self._pipe.enable_vae_tiling()
+
+            self._model_loaded = True
+            load_time = time.time() - start_time
+            logger.info(f"Model loaded successfully in {load_time:.1f}s")
+
+        except Exception as e:
+            logger.error(f"Failed to load WAN model: {e}", exc_info=True)
+            raise
 
     def calculate_frames(self, duration_seconds: int) -> int:
         """
-        Calculate frame count for Open-Sora
-        Open-Sora requires frames in format: 4k+1 and less than 129
+        Calculate frame count for WAN
+        WAN requires frames in format: 4k+1
         """
         total_frames = duration_seconds * FRAMES_PER_SECOND
-        # Round to nearest 4k+1 format
         k = (total_frames - 1) // 4
         frames = 4 * k + 1
-        # Ensure within limits
-        return min(frames, 125)  # Max 125 (4*31+1)
+        return min(max(frames, 17), 81)
 
     def _enhance_prompt_for_quality(self, prompt: str) -> str:
-        """
-        Enhance prompt for better quality and face preservation
-        Adds quality-improving keywords if not already present
-        """
+        """Enhance prompt for better quality"""
         prompt_lower = prompt.lower()
         enhancements = []
 
-        # Add quality keywords if not present
-        quality_keywords = ['high quality', 'detailed', 'sharp', 'clear', '4k', '8k', 'hd']
+        quality_keywords = ['high quality', 'detailed', 'sharp', 'clear', '4k', '8k', 'hd', 'cinematic']
         if not any(kw in prompt_lower for kw in quality_keywords):
-            enhancements.append("high quality")
+            enhancements.append("high quality, cinematic")
 
-        # Add face preservation keywords if face/person detected (whole word match)
         face_keywords = [r'\bface\b', r'\bperson\b', r'\bwoman\b', r'\bman\b', r'\bgirl\b', r'\bboy\b', r'\bpeople\b', r'\bportrait\b']
         if any(re.search(pattern, prompt_lower) for pattern in face_keywords):
-            if 'detailed face' not in prompt_lower and 'clear face' not in prompt_lower:
+            if 'detailed face' not in prompt_lower:
                 enhancements.append("detailed facial features")
 
-        # Add smooth motion keyword for video quality
         if 'smooth' not in prompt_lower and 'fluid' not in prompt_lower:
             enhancements.append("smooth motion")
 
@@ -78,7 +141,7 @@ class VideoGenerator:
         return prompt
 
     def is_processing(self) -> bool:
-        """Return True while a torchrun task is still running."""
+        """Return True while a task is still running."""
         task = self._current_task
         return task is not None and not task.done()
 
@@ -105,9 +168,7 @@ class VideoGenerator:
         seed: Optional[int] = None,
         refine_prompt: bool = False
     ) -> bool:
-        """
-        Launch generation exactly once. Returns False if a job is already running.
-        """
+        """Launch generation. Returns False if a job is already running."""
         if self.is_processing():
             return False
 
@@ -123,13 +184,7 @@ class VideoGenerator:
                 num_steps=num_steps,
                 guidance=guidance,
                 guidance_img=guidance_img,
-                face_detail=face_detail,
-                aesthetic_score=aesthetic_score,
-                sharpness=sharpness,
                 negative_prompt=negative_prompt,
-                face_enhance=face_enhance,
-                denoise=denoise,
-                temporal_smoothing=temporal_smoothing,
                 seed=seed,
                 refine_prompt=refine_prompt,
             )
@@ -141,13 +196,36 @@ class VideoGenerator:
         self._current_task.add_done_callback(_clear_task)
         return True
 
+    def _get_resolution_for_aspect_ratio(self, aspect_ratio: str) -> tuple:
+        """Get width and height for aspect ratio"""
+        if "TI2V" in WAN_MODEL_ID:
+            if aspect_ratio == "9:16":
+                return 704, 1280
+            else:
+                return 1280, 704
+        else:
+            if WAN_MODEL_VARIANT == "480P":
+                if aspect_ratio == "9:16":
+                    return 480, 832
+                elif aspect_ratio == "1:1":
+                    return 480, 480
+                else:
+                    return 832, 480
+            else:
+                if aspect_ratio == "9:16":
+                    return 720, 1280
+                elif aspect_ratio == "1:1":
+                    return 720, 720
+                else:
+                    return 1280, 720
+
     async def generate_video(
         self,
         video_id: str,
         mode: str,
         image_path: Optional[str],
         prompt: str,
-        duration: int = 15,
+        duration: int = 5,
         aspect_ratio: str = "16:9",
         motion_score: float = 0.5,
         num_steps: int = DEFAULT_NUM_STEPS,
@@ -164,12 +242,12 @@ class VideoGenerator:
         refine_prompt: bool = False
     ) -> Dict:
         """
-        Generate video using Open-Sora 2.0
+        Generate video using WAN 2.2
 
         Args:
             video_id: Unique identifier for this generation job
             mode: Generation mode (i2v or t2v)
-            image_path: Path to input image (required for i2v, optional for t2v)
+            image_path: Path to input image (required for i2v)
             prompt: Text prompt for generation
             duration: Video duration in seconds
             aspect_ratio: Video aspect ratio
@@ -177,28 +255,24 @@ class VideoGenerator:
             num_steps: Diffusion steps
             guidance: Text guidance strength
             guidance_img: Image guidance strength
-            face_detail: Face detail level
-            aesthetic_score: Aesthetic quality
-            sharpness: Sharpness level
             negative_prompt: What to avoid
-            face_enhance: Enable face enhancement
-            denoise: Enable denoising
-            temporal_smoothing: Enable temporal smoothing
             seed: Random seed for reproducibility
-            refine_prompt: Whether to refine prompt with AI
+            refine_prompt: Whether to enhance prompt
 
         Returns:
             Dictionary with generation results
         """
-        # Acquire lock to prevent concurrent generations
         async with self._generation_lock:
             try:
-                # Enhance prompt for better quality and face preservation
+                # Enhance prompt if requested or by default
                 enhanced_prompt = self._enhance_prompt_for_quality(prompt)
                 if enhanced_prompt != prompt:
-                    logger.info(f"Enhanced prompt for quality: {enhanced_prompt}")
+                    logger.info(f"Enhanced prompt: {enhanced_prompt}")
 
-                # Log generation parameters
+                # Use negative prompt if provided
+                neg_prompt = negative_prompt or "low quality, blurry, distorted, watermark, text, deformed"
+
+                # Log parameters
                 logger.info(f"=== Starting {mode.upper()} video generation: {video_id} ===")
                 logger.info(f"Parameters:")
                 logger.info(f"  - Mode: {mode}")
@@ -207,77 +281,9 @@ class VideoGenerator:
                 logger.info(f"  - Prompt: {enhanced_prompt}")
                 logger.info(f"  - Duration: {duration}s")
                 logger.info(f"  - Aspect ratio: {aspect_ratio}")
-                logger.info(f"  - Motion score: {motion_score}")
                 logger.info(f"  - Num steps: {num_steps}")
                 logger.info(f"  - Guidance: {guidance}")
-                logger.info(f"  - Guidance img: {guidance_img}")
-                logger.info(f"  - Face detail: {face_detail}")
-                logger.info(f"  - Aesthetic score: {aesthetic_score}")
                 logger.info(f"  - Seed: {seed}")
-                logger.info(f"  - Refine prompt: {refine_prompt}")
-
-                # Calculate frames
-                num_frames = self.calculate_frames(duration)
-                logger.info(f"Generating {num_frames} frames for {duration}s video")
-
-                # Create unique output directory for this job to avoid file conflicts
-                job_output_dir = OUTPUT_DIR / video_id
-                job_output_dir.mkdir(exist_ok=True)
-
-                # Prepare output path
-                output_path = OUTPUT_DIR / f"{video_id}.mp4"
-
-                # Use config file directly from Open-Sora directory
-                # Don't copy it - copying breaks _base_ imports in mmengine
-                config_file_path = Path(self.opensora_path) / MODEL_CONFIG_PATH
-
-                logger.info(f"Using config: {MODEL_CONFIG_PATH} with custom parameters")
-                logger.info(f"Quality settings: steps={num_steps}, guidance={guidance}, guidance_img={guidance_img}")
-
-                # Build command - use config from Open-Sora directory
-                # Pass quality parameters via command line to override config defaults
-                # IMPORTANT: Removed --offload for MAXIMUM GPU utilization
-                # Offloading moves models between CPU/GPU which reduces performance
-                # Only enable offload if you have low VRAM (<24GB)
-                cmd = [
-                    "torchrun",
-                    "--nproc_per_node", "1",
-                    "--standalone",
-                    "scripts/diffusion/inference.py",
-                    str(config_file_path),
-                    "--num-sampling-steps", str(num_steps),
-                    "--cfg-scale", str(guidance),
-                ]
-
-                # Add mode-specific parameters
-                if mode == "i2v":
-                    cmd.extend(["--cond_type", "i2v_head"])
-                    if image_path:
-                        cmd.extend(["--ref", str(image_path)])
-                else:  # t2v mode
-                    cmd.extend(["--cond_type", "t2v"])
-
-                # Add common parameters
-                cmd.extend([
-                    "--prompt", enhanced_prompt,  # Use enhanced prompt
-                    "--num_frames", str(num_frames),
-                    "--aspect_ratio", aspect_ratio,
-                    "--motion-score", str(motion_score),
-                    "--save_dir", str(job_output_dir),
-                    # --offload removed for full GPU utilization
-                ])
-
-                # Only add --ckpt if explicitly set via environment variable
-                # Otherwise, let the config file's from_pretrained handle model loading
-                if CHECKPOINT_PATH and os.environ.get("CHECKPOINT_PATH"):
-                    cmd.extend(["--ckpt", CHECKPOINT_PATH])
-
-                # Add optional parameters
-                if seed is not None:
-                    cmd.extend(["--seed", str(seed)])
-
-                if refine_prompt:
-                    cmd.append("--refine-prompt")
 
                 # Update job status
                 self.jobs[video_id] = {
@@ -286,162 +292,92 @@ class VideoGenerator:
                     "progress": 0,
                 }
 
-                logger.info(f"Starting video generation: {video_id}")
-                logger.info(f"Working directory: {self.opensora_path}")
-                logger.info(f"Command: {' '.join(cmd)}")
+                # Load model if needed
+                self._load_model()
 
-                # MAXIMUM GPU PERFORMANCE SETTINGS
-                # Set environment variables for optimal CUDA performance
-                env = os.environ.copy()
-                perf_env = {
-                    # PyTorch optimizations
-                    "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",  # Better memory management
-                    "TORCH_CUDNN_V8_API_ENABLED": "1",  # Enable cuDNN v8 optimizations
-                    "CUDA_LAUNCH_BLOCKING": "0",  # Async kernel launches for speed
+                # Calculate frames and resolution
+                num_frames = self.calculate_frames(duration)
+                width, height = self._get_resolution_for_aspect_ratio(aspect_ratio)
+                logger.info(f"Generating {num_frames} frames at {width}x{height}")
 
-                    # cuDNN optimizations
-                    "CUDNN_BENCHMARK": "1",  # Auto-tune for best performance
-                    "CUDNN_DETERMINISTIC": "0",  # Allow non-deterministic for speed
+                # Prepare output path
+                output_path = OUTPUT_DIR / f"{video_id}.mp4"
 
-                    # TensorFloat-32 for speed (compatible with A100, A6000, etc.)
-                    "TORCH_ALLOW_TF32_CUBLAS_OVERRIDE": "1",
-                    "TORCH_ALLOW_TF32": "1",
+                # Set up generator for reproducibility
+                generator = None
+                if seed is not None:
+                    generator = torch.Generator(device="cuda").manual_seed(seed)
 
-                    # Disable CPU fallback to force GPU usage
-                    "CUDA_VISIBLE_DEVICES": "0",  # Use first GPU
+                start_time = time.time()
 
-                    # Memory optimization
-                    "PYTORCH_NO_CUDA_MEMORY_CACHING": "0",  # Enable caching for speed
-                }
-                env.update(perf_env)
+                # Handle I2V vs T2V modes
+                if mode == "i2v" and image_path:
+                    # Image-to-Video mode
+                    image = Image.open(image_path).convert("RGB")
+                    image = image.resize((width, height), Image.Resampling.LANCZOS)
 
-                # Run generation in subprocess with performance optimizations
-                process = await asyncio.create_subprocess_exec(
-                    *cmd,
-                    cwd=str(self.opensora_path),
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                    env=env
-                )
-
-                # Stream output
-                stdout, stderr = await process.communicate()
-
-                # Decode output with error handling
-                stdout_text = stdout.decode(errors="replace") if stdout else ""
-                stderr_text = stderr.decode(errors="replace") if stderr else ""
-
-                if process.returncode != 0:
-                    # Log full output on failure
-                    if stdout_text:
-                        logger.error(f"Generation stdout:\n{stdout_text}")
-                    if stderr_text:
-                        logger.error(f"Generation stderr:\n{stderr_text}")
-
-                    error_msg = stderr_text or "Unknown error"
-                    logger.error(f"Generation failed with returncode {process.returncode}: {error_msg}")
-                    self.jobs[video_id]["status"] = "failed"
-                    self.jobs[video_id]["error"] = error_msg
-                    return {
-                        "success": False,
-                        "error": error_msg
-                    }
-
-                # Log output for successful runs
-                if VERBOSE_GENERATION_LOGS:
-                    # Full output when verbose logging is enabled
-                    if stdout_text:
-                        logger.info(f"Generation stdout (full):\n{stdout_text}")
-                    if stderr_text:
-                        logger.info(f"Generation stderr (full):\n{stderr_text}")
-                else:
-                    # Truncated output at debug level by default
-                    if stdout_text:
-                        logger.debug(f"Generation stdout (truncated): {stdout_text[-1000:]}")
-                    if stderr_text:
-                        logger.debug(f"Generation stderr (truncated): {stderr_text[-1000:]}")
-
-                # Find generated video file in job-specific directory (search recursively)
-                generated_files = list(job_output_dir.glob("**/*.mp4"))
-                if not generated_files:
-                    # Log directory contents for debugging
-                    all_files = list(job_output_dir.glob("*"))
-                    logger.error(f"No video file generated in {job_output_dir}")
-                    logger.error(f"Directory contents: {[f.name for f in all_files]}")
-                    logger.error(f"Last stdout: {stdout_text[-500:]}")
-                    logger.error(f"Last stderr: {stderr_text[-500:]}")
-                    self.jobs[video_id]["status"] = "failed"
-                    return {
-                        "success": False,
-                        "error": "No video file generated"
-                    }
-
-                # Get the generated file (should only be one in this directory)
-                generated_file = generated_files[0]
-
-                # Log video file properties
-                file_size_kb = generated_file.stat().st_size / 1024
-                logger.info(f"Generated video found: {generated_file.name}")
-                logger.info(f"File size: {file_size_kb:.1f} KB")
-                logger.info(f"Full path: {generated_file}")
-                logger.info(f"Requested aspect ratio: {aspect_ratio}")
-
-                # Check video properties with ffprobe if available
-                try:
-                    import subprocess
-                    probe_result = subprocess.run(
-                        ["ffprobe", "-v", "error", "-show_entries",
-                         "format=duration:stream=width,height,nb_frames",
-                         "-of", "default=noprint_wrappers=1", str(generated_file)],
-                        capture_output=True,
-                        text=True,
-                        timeout=5
+                    logger.info("Starting WAN I2V inference...")
+                    output = self._pipe(
+                        image=image,
+                        prompt=enhanced_prompt,
+                        negative_prompt=neg_prompt,
+                        height=height,
+                        width=width,
+                        num_frames=num_frames,
+                        guidance_scale=guidance,
+                        num_inference_steps=num_steps,
+                        generator=generator,
                     )
-                    if probe_result.returncode == 0:
-                        logger.info(f"Video properties:\n{probe_result.stdout}")
-
-                        # Check if aspect ratio matches request
-                        width_match = re.search(r'width=(\d+)', probe_result.stdout)
-                        height_match = re.search(r'height=(\d+)', probe_result.stdout)
-                        if width_match and height_match:
-                            actual_width = int(width_match.group(1))
-                            actual_height = int(height_match.group(1))
-                            actual_ratio = actual_width / actual_height
-
-                            # Calculate expected ratio
-                            if aspect_ratio == "16:9":
-                                expected_ratio = 16/9
-                            elif aspect_ratio == "9:16":
-                                expected_ratio = 9/16
-                            elif aspect_ratio == "1:1":
-                                expected_ratio = 1.0
-                            elif aspect_ratio == "2.39:1":
-                                expected_ratio = 2.39
-                            else:
-                                expected_ratio = None
-
-                            if expected_ratio:
-                                ratio_diff = abs(actual_ratio - expected_ratio)
-                                if ratio_diff > 0.1:
-                                    logger.warning(f"Aspect ratio mismatch! Requested: {aspect_ratio} ({expected_ratio:.2f}), Got: {actual_width}x{actual_height} ({actual_ratio:.2f})")
-                                else:
-                                    logger.info(f"✅ Aspect ratio correct: {aspect_ratio}")
+                else:
+                    # Text-to-Video mode (or I2V without image)
+                    logger.info("Starting WAN T2V inference...")
+                    if hasattr(self._pipe, 'WanPipeline') or self._pipeline_type == "t2v":
+                        output = self._pipe(
+                            prompt=enhanced_prompt,
+                            negative_prompt=neg_prompt,
+                            height=height,
+                            width=width,
+                            num_frames=num_frames,
+                            guidance_scale=guidance,
+                            num_inference_steps=num_steps,
+                            generator=generator,
+                        )
                     else:
-                        logger.warning(f"Could not probe video: {probe_result.stderr}")
-                except Exception as e:
-                    logger.debug(f"ffprobe not available or failed: {e}")
+                        # TI2V can do T2V without image
+                        output = self._pipe(
+                            prompt=enhanced_prompt,
+                            negative_prompt=neg_prompt,
+                            height=height,
+                            width=width,
+                            num_frames=num_frames,
+                            guidance_scale=guidance,
+                            num_inference_steps=num_steps,
+                            generator=generator,
+                        )
 
-                # Move to final output location
-                generated_file.rename(output_path)
+                # Get frames and export
+                frames = output.frames[0]
+                from diffusers.utils import export_to_video
+                export_to_video(frames, str(output_path), fps=FRAMES_PER_SECOND)
 
-                # Clean up job directory
-                try:
-                    job_output_dir.rmdir()
-                except:
-                    pass  # Directory not empty or other issue, ignore
+                # Clear memory
+                del output, frames
+                gc.collect()
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+
+                duration_taken = time.time() - start_time
+
+                # Verify output
+                if not output_path.exists():
+                    logger.error("No video file generated")
+                    self.jobs[video_id]["status"] = "failed"
+                    return {"success": False, "error": "No video file generated"}
+
+                file_size_kb = output_path.stat().st_size / 1024
+                logger.info(f"Generated: {output_path} ({file_size_kb:.1f} KB)")
 
                 # Update job status
-                duration_taken = time.time() - self.jobs[video_id]["start_time"]
                 self.jobs[video_id].update({
                     "status": "completed",
                     "progress": 100,
@@ -457,14 +393,21 @@ class VideoGenerator:
                     "duration": duration_taken,
                 }
 
+            except torch.cuda.OutOfMemoryError as e:
+                error_msg = f"CUDA out of memory: {str(e)}"
+                logger.error(error_msg)
+                self.jobs[video_id]["status"] = "failed"
+                self.jobs[video_id]["error"] = error_msg
+                gc.collect()
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                return {"success": False, "error": error_msg}
+
             except Exception as e:
                 logger.error(f"Error generating video: {e}", exc_info=True)
                 self.jobs[video_id]["status"] = "failed"
                 self.jobs[video_id]["error"] = str(e)
-                return {
-                    "success": False,
-                    "error": str(e)
-                }
+                return {"success": False, "error": str(e)}
 
     def get_job_status(self, video_id: str) -> Optional[Dict]:
         """Get status of a generation job"""

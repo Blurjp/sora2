@@ -1,12 +1,8 @@
 """
-Configuration for Open-Sora Video Generation Service
+Configuration for WAN 2.2 Video Generation Service
 """
 import os
 from pathlib import Path
-
-# Open-Sora Installation Path
-# IMPORTANT: Update this path to your Open-Sora installation directory
-OPENSORA_PATH = os.environ.get("OPENSORA_PATH", "/path/to/Open-Sora")
 
 # Project paths
 BASE_DIR = Path(__file__).parent.parent
@@ -26,39 +22,59 @@ PORT = int(os.environ.get("PORT", "8000"))
 
 # Video generation settings
 DEFAULT_ASPECT_RATIO = "16:9"
-DEFAULT_DURATION = 15  # seconds
-MIN_DURATION = 5
-MAX_DURATION = 30  # Increased limit
+DEFAULT_DURATION = 5  # seconds (WAN generates 81 frames at 16fps = ~5s)
+MIN_DURATION = 3
+MAX_DURATION = 10  # WAN supports shorter but higher quality videos
 
-# Frame calculation: Open-Sora uses 4k+1 formula
-# Assuming 8 FPS for longer videos
-FRAMES_PER_SECOND = 8
+# Frame calculation: WAN uses 4k+1 formula (same as Open-Sora)
+# WAN 2.2 generates at 16 FPS natively
+FRAMES_PER_SECOND = 16
 
 # Supported aspect ratios
-ASPECT_RATIOS = ["16:9", "9:16", "1:1", "2.39:1"]
+ASPECT_RATIOS = ["16:9", "9:16", "1:1"]
 
 # Advanced generation parameters (can be overridden per request or via .env)
-DEFAULT_NUM_STEPS = int(os.environ.get("DEFAULT_NUM_STEPS", "120"))  # Diffusion steps (more = better quality but slower)
+# WAN 2.2 defaults are different from Open-Sora
+DEFAULT_NUM_STEPS = int(os.environ.get("DEFAULT_NUM_STEPS", "40"))  # WAN default: 40 steps
 MIN_NUM_STEPS = 20
-MAX_NUM_STEPS = 300  # Increased for INSANE quality mode
+MAX_NUM_STEPS = 100  # WAN doesn't benefit as much from very high steps
 
-DEFAULT_GUIDANCE = float(os.environ.get("DEFAULT_GUIDANCE", "12.0"))  # Text guidance strength
+DEFAULT_GUIDANCE = float(os.environ.get("DEFAULT_GUIDANCE", "5.0"))  # WAN text guidance (lower than Open-Sora)
 MIN_GUIDANCE = 1.0
-MAX_GUIDANCE = 20.0
+MAX_GUIDANCE = 15.0
 
-DEFAULT_GUIDANCE_IMG = float(os.environ.get("DEFAULT_GUIDANCE_IMG", "3.5"))  # Image guidance - face preservation
+DEFAULT_GUIDANCE_IMG = float(os.environ.get("DEFAULT_GUIDANCE_IMG", "3.5"))  # Image guidance for I2V
 MIN_GUIDANCE_IMG = 0.5
-MAX_GUIDANCE_IMG = 10.0  # Increased for maximum image fidelity
+MAX_GUIDANCE_IMG = 10.0
 
-# Model configuration
-# Defaults to 768px for production-quality videos
-MODEL_RESOLUTION = os.environ.get("MODEL_RESOLUTION", "768px")  # "768px" recommended, "256px" for testing only
-MODEL_CONFIG_PATH = f"configs/diffusion/inference/{MODEL_RESOLUTION}.py"
+# WAN 2.2 Model Configuration
+# Available models:
+# - "Wan-AI/Wan2.2-I2V-A14B-Diffusers" (14B params, 80GB VRAM, best quality)
+# - "Wan-AI/Wan2.2-TI2V-5B-Diffusers" (5B params, 24GB VRAM, consumer GPU friendly)
+WAN_MODEL_ID = os.environ.get("WAN_MODEL_ID", "Wan-AI/Wan2.2-I2V-A14B-Diffusers")
 
-# Checkpoint configuration
-# Optional: Override model checkpoint via environment variable
-# If not set, the config file's from_pretrained will be used
-# Example: CHECKPOINT_PATH=hpcai-tech/OpenSora-STDiT-v3/model.safetensors
+# Model variant for I2V (used only with I2V-A14B model)
+# Options: "480P", "720P"
+WAN_MODEL_VARIANT = os.environ.get("WAN_MODEL_VARIANT", "720P")
+
+# Resolution settings for WAN 2.2
+# I2V-A14B: 1280x720 (720P) or 832x480 (480P)
+# TI2V-5B: 1280x704 or 704x1280 (720P only)
+WAN_WIDTH = int(os.environ.get("WAN_WIDTH", "1280"))
+WAN_HEIGHT = int(os.environ.get("WAN_HEIGHT", "720"))
+
+# Memory optimization options
+WAN_ENABLE_MODEL_CPU_OFFLOAD = os.environ.get("WAN_ENABLE_MODEL_CPU_OFFLOAD", "false").lower() == "true"
+WAN_ENABLE_VAE_SLICING = os.environ.get("WAN_ENABLE_VAE_SLICING", "true").lower() == "true"
+WAN_ENABLE_VAE_TILING = os.environ.get("WAN_ENABLE_VAE_TILING", "false").lower() == "true"
+
+# Data type for model (bfloat16 recommended for modern GPUs)
+WAN_TORCH_DTYPE = os.environ.get("WAN_TORCH_DTYPE", "bfloat16")  # "float16" or "bfloat16"
+
+# Legacy compatibility (these are kept for backward compatibility but not used)
+OPENSORA_PATH = os.environ.get("OPENSORA_PATH", None)
+MODEL_RESOLUTION = os.environ.get("MODEL_RESOLUTION", "720P")
+MODEL_CONFIG_PATH = None
 CHECKPOINT_PATH = os.environ.get("CHECKPOINT_PATH", None)
 
 # Generation limits
