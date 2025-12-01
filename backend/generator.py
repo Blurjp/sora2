@@ -66,11 +66,14 @@ class VideoGenerator:
 
         try:
             # Determine which pipeline to use based on model ID
+            # Disable safety checker for unrestricted generation
             if "I2V" in WAN_MODEL_ID:
                 from diffusers import WanImageToVideoPipeline
                 self._pipe = WanImageToVideoPipeline.from_pretrained(
                     WAN_MODEL_ID,
                     torch_dtype=self._dtype,
+                    safety_checker=None,
+                    requires_safety_checker=False,
                 )
                 self._pipeline_type = "i2v"
             elif "TI2V" in WAN_MODEL_ID:
@@ -78,6 +81,8 @@ class VideoGenerator:
                 self._pipe = WanImageToVideoPipeline.from_pretrained(
                     WAN_MODEL_ID,
                     torch_dtype=self._dtype,
+                    safety_checker=None,
+                    requires_safety_checker=False,
                 )
                 self._pipeline_type = "ti2v"
             else:
@@ -85,8 +90,16 @@ class VideoGenerator:
                 self._pipe = WanPipeline.from_pretrained(
                     WAN_MODEL_ID,
                     torch_dtype=self._dtype,
+                    safety_checker=None,
+                    requires_safety_checker=False,
                 )
                 self._pipeline_type = "t2v"
+
+            # Explicitly disable any safety components
+            if hasattr(self._pipe, 'safety_checker'):
+                self._pipe.safety_checker = None
+            if hasattr(self._pipe, 'feature_extractor'):
+                self._pipe.feature_extractor = None
 
             # Apply memory optimizations
             if WAN_ENABLE_MODEL_CPU_OFFLOAD:
@@ -269,8 +282,8 @@ class VideoGenerator:
                 if enhanced_prompt != prompt:
                     logger.info(f"Enhanced prompt: {enhanced_prompt}")
 
-                # Use negative prompt if provided
-                neg_prompt = negative_prompt or "low quality, blurry, distorted, watermark, text, deformed"
+                # Use negative prompt if provided, otherwise no restrictions
+                neg_prompt = negative_prompt or ""  # No content restrictions
 
                 # Log parameters
                 logger.info(f"=== Starting {mode.upper()} video generation: {video_id} ===")
