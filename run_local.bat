@@ -1,5 +1,4 @@
 @echo off
-setlocal enabledelayedexpansion
 
 REM ============================================================================
 REM Local Mode - Run everything on this machine (requires local GPU)
@@ -11,17 +10,46 @@ echo   (Runs on your local GPU)
 echo ===============================================================
 echo.
 
+cd /d "%~dp0"
+
+REM Create virtual environment if it doesn't exist
+if not exist "venv\Scripts\activate.bat" (
+    echo Creating virtual environment...
+    python -m venv venv
+    if errorlevel 1 (
+        echo ERROR: Failed to create virtual environment
+        pause
+        exit /b 1
+    )
+    echo Virtual environment created.
+    echo.
+)
+
+REM Activate virtual environment
+call venv\Scripts\activate.bat
+echo Virtual environment activated.
+echo.
+
+REM Install dependencies if fastapi is not installed
+python -c "import fastapi" 2>nul
+if errorlevel 1 (
+    echo Installing dependencies...
+    python -m pip install -r requirements.txt
+    if errorlevel 1 (
+        echo ERROR: Failed to install dependencies
+        pause
+        exit /b 1
+    )
+    echo Dependencies installed.
+    echo.
+)
+
 REM Load environment from .env file if it exists
-if exist "%~dp0.env" (
+if exist ".env" (
     echo Loading configuration from .env file...
-    for /f "usebackq tokens=1,* delims==" %%a in ("%~dp0.env") do (
+    for /f "usebackq tokens=1,* delims==" %%a in (".env") do (
         set "line=%%a"
-        REM Skip comments and empty lines
-        if not "!line:~0,1!"=="#" (
-            if not "%%a"=="" (
-                set "%%a=%%b"
-            )
-        )
+        if not "%%a"=="" if not "!line:~0,1!"=="#" set "%%a=%%b"
     )
     echo.
 )
@@ -33,23 +61,7 @@ set PORT=8000
 
 echo Configuration:
 echo   Mode:        LOCAL (using local GPU)
-echo   Model:       %WAN_MODEL_ID%
-echo   Resolution:  %WAN_WIDTH%x%WAN_HEIGHT%
 echo   Port:        %PORT%
-echo.
-
-REM Activate virtual environment if it exists
-if exist "%~dp0venv\Scripts\activate.bat" (
-    call "%~dp0venv\Scripts\activate.bat"
-    echo Virtual environment activated.
-) else (
-    echo WARNING: Virtual environment not found at %~dp0venv
-    echo Run: python -m venv venv
-    echo Then: venv\Scripts\activate ^& pip install -r requirements.txt
-    pause
-    exit /b 1
-)
-
 echo.
 echo Web interface: http://127.0.0.1:%PORT%
 echo.
