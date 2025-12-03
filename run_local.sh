@@ -1,100 +1,64 @@
 #!/bin/bash
 
 #============================================================================
-# Local Backend Runner
-# Runs backend + frontend locally, connects to remote GPU
+# Local Mode - Run everything on this machine (requires local GPU)
 #============================================================================
 
 set -e
 
-# Colors for output
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Load environment from .env file
 ENV_FILE="$SCRIPT_DIR/.env"
 if [ -f "$ENV_FILE" ]; then
     echo -e "${YELLOW}Loading environment from ${ENV_FILE}${NC}"
     set -a
-    # shellcheck disable=SC1090
     source "$ENV_FILE"
     set +a
 fi
 
 echo -e "${BLUE}╔════════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║        Open-Sora Local Backend (Remote GPU Mode)          ║${NC}"
+echo -e "${BLUE}║        WAN Video Generation - LOCAL MODE                       ║${NC}"
+echo -e "${BLUE}║        (Runs on your local GPU)                                ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
-# Get GPU service URL from argument or environment
-GPU_URL="${GPU_SERVICE_URL:-}"
-API_KEY="${GPU_API_KEY:-}"
-PORT=8000
-
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        --gpu-url)
-            GPU_URL="$2"
-            shift 2
-            ;;
-        --api-key)
-            API_KEY="$2"
-            shift 2
-            ;;
-        --port)
-            PORT="$2"
-            shift 2
-            ;;
-        *)
-            echo -e "${YELLOW}Unknown option: $1${NC}"
-            echo "Usage: $0 --gpu-url http://gpu-instance:8001 [--api-key KEY] [--port 8000]"
-            exit 1
-            ;;
-    esac
-done
-
-if [ -z "$GPU_URL" ]; then
-    echo -e "${YELLOW}ERROR: GPU service URL not specified${NC}"
-    echo ""
-    echo "Usage:"
-    echo "  $0 --gpu-url http://your-lambda-ip:8001"
-    echo ""
-    echo "Or set environment variable:"
-    echo "  export GPU_SERVICE_URL=http://your-lambda-ip:8001"
-    exit 1
-fi
+# Force local mode
+export USE_REMOTE_GPU=false
+export HOST="127.0.0.1"
+export PORT="${PORT:-8000}"
 
 echo -e "${GREEN}Configuration:${NC}"
-echo -e "  GPU Service: ${YELLOW}$GPU_URL${NC}"
-echo -e "  Local Port:  ${YELLOW}$PORT${NC}"
-if [ -n "$API_KEY" ]; then
-    echo -e "  API Key:     ${GREEN}✓ Set${NC}"
-else
-    echo -e "  API Key:     ${YELLOW}Not set${NC}"
-fi
+echo -e "  Mode:        ${YELLOW}LOCAL (using local GPU)${NC}"
+echo -e "  Model:       ${YELLOW}${WAN_MODEL_ID:-Wan-AI/Wan2.1-T2V-1.3B-Diffusers}${NC}"
+echo -e "  Resolution:  ${YELLOW}${WAN_WIDTH:-832}x${WAN_HEIGHT:-480}${NC}"
+echo -e "  Port:        ${YELLOW}$PORT${NC}"
 echo ""
-echo -e "${BLUE}Starting local backend...${NC}"
+
+# Cleanup any existing services on our ports
+echo "Cleaning up any existing services..."
+for port in 8000 8001; do
+    port_pid=$(lsof -ti:$port 2>/dev/null || true)
+    if [ ! -z "$port_pid" ]; then
+        echo "  Freeing port $port (PID: $port_pid)..."
+        kill -15 $port_pid 2>/dev/null || true
+        sleep 1
+        kill -9 $port_pid 2>/dev/null || true
+    fi
+done
+echo "✓ Cleanup complete"
 echo ""
-echo "Open your browser at:"
-echo -e "  ${GREEN}http://localhost:$PORT${NC}"
+
+echo -e "Web interface: ${GREEN}http://127.0.0.1:$PORT${NC}"
 echo ""
 echo "Press Ctrl+C to stop"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-# Start the local backend
 cd "$SCRIPT_DIR"
-
-# Export environment variables
-export USE_REMOTE_GPU=true
-export GPU_SERVICE_URL="$GPU_URL"
-export HOST="127.0.0.1"
-export PORT="$PORT"
-if [ -n "$API_KEY" ]; then
-    export GPU_API_KEY="$API_KEY"
-fi
-
-# Run the backend
-python3 backend/main.py
+python3 -m backend.main

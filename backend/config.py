@@ -3,6 +3,10 @@ Configuration for WAN 2.2 Video Generation Service
 """
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Project paths
 BASE_DIR = Path(__file__).parent.parent
@@ -34,12 +38,12 @@ FRAMES_PER_SECOND = 16
 ASPECT_RATIOS = ["16:9", "9:16", "1:1"]
 
 # Advanced generation parameters (can be overridden per request or via .env)
-# WAN 2.2 defaults are different from Open-Sora
-DEFAULT_NUM_STEPS = int(os.environ.get("DEFAULT_NUM_STEPS", "40"))  # WAN default: 40 steps
+# Optimized for WAN 1.3B model
+DEFAULT_NUM_STEPS = int(os.environ.get("DEFAULT_NUM_STEPS", "30"))  # 30 steps is good balance for 1.3B
 MIN_NUM_STEPS = 20
-MAX_NUM_STEPS = 100  # WAN doesn't benefit as much from very high steps
+MAX_NUM_STEPS = 100
 
-DEFAULT_GUIDANCE = float(os.environ.get("DEFAULT_GUIDANCE", "5.0"))  # WAN text guidance (lower than Open-Sora)
+DEFAULT_GUIDANCE = float(os.environ.get("DEFAULT_GUIDANCE", "6.0"))  # 6.0 recommended for 1.3B model
 MIN_GUIDANCE = 1.0
 MAX_GUIDANCE = 15.0
 
@@ -47,21 +51,23 @@ DEFAULT_GUIDANCE_IMG = float(os.environ.get("DEFAULT_GUIDANCE_IMG", "3.5"))  # I
 MIN_GUIDANCE_IMG = 0.5
 MAX_GUIDANCE_IMG = 10.0
 
-# WAN 2.2 Model Configuration
-# Available models:
+# WAN Model Configuration
+# Available models (Text-to-Video):
+# - "Wan-AI/Wan2.1-T2V-1.3B-Diffusers" (1.3B params, ~8GB VRAM, fastest, good quality)
+# - "Wan-AI/Wan2.2-T2V-A14B-Diffusers" (14B params, 80GB VRAM, best quality, slow)
+# Available models (Image-to-Video):
 # - "Wan-AI/Wan2.2-I2V-A14B-Diffusers" (14B params, 80GB VRAM, best quality)
-# - "Wan-AI/Wan2.2-TI2V-5B-Diffusers" (5B params, 24GB VRAM, consumer GPU friendly)
-WAN_MODEL_ID = os.environ.get("WAN_MODEL_ID", "Wan-AI/Wan2.2-I2V-A14B-Diffusers")
+WAN_MODEL_ID = os.environ.get("WAN_MODEL_ID", "Wan-AI/Wan2.1-T2V-1.3B-Diffusers")
 
-# Model variant for I2V (used only with I2V-A14B model)
+# Model variant (480P recommended for 1.3B model, 720P for 14B)
 # Options: "480P", "720P"
-WAN_MODEL_VARIANT = os.environ.get("WAN_MODEL_VARIANT", "720P")
+WAN_MODEL_VARIANT = os.environ.get("WAN_MODEL_VARIANT", "480P")
 
-# Resolution settings for WAN 2.2
-# I2V-A14B: 1280x720 (720P) or 832x480 (480P)
-# TI2V-5B: 1280x704 or 704x1280 (720P only)
-WAN_WIDTH = int(os.environ.get("WAN_WIDTH", "1280"))
-WAN_HEIGHT = int(os.environ.get("WAN_HEIGHT", "720"))
+# Resolution settings for WAN
+# 1.3B model: 832x480 (480P) recommended for best quality
+# 14B model: 1280x720 (720P) for best quality
+WAN_WIDTH = int(os.environ.get("WAN_WIDTH", "832"))
+WAN_HEIGHT = int(os.environ.get("WAN_HEIGHT", "480"))
 
 # Memory optimization options
 WAN_ENABLE_MODEL_CPU_OFFLOAD = os.environ.get("WAN_ENABLE_MODEL_CPU_OFFLOAD", "false").lower() == "true"

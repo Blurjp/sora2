@@ -74,6 +74,8 @@ class VideoGenerator:
                     torch_dtype=self._dtype,
                     safety_checker=None,
                     requires_safety_checker=False,
+                    force_download=False,  # Set to True to force re-download
+                    resume_download=True,   # Resume interrupted downloads
                 )
                 self._pipeline_type = "i2v"
             elif "TI2V" in WAN_MODEL_ID:
@@ -83,6 +85,8 @@ class VideoGenerator:
                     torch_dtype=self._dtype,
                     safety_checker=None,
                     requires_safety_checker=False,
+                    force_download=False,  # Set to True to force re-download
+                    resume_download=True,   # Resume interrupted downloads
                 )
                 self._pipeline_type = "ti2v"
             else:
@@ -92,6 +96,8 @@ class VideoGenerator:
                     torch_dtype=self._dtype,
                     safety_checker=None,
                     requires_safety_checker=False,
+                    force_download=False,  # Set to True to force re-download
+                    resume_download=True,   # Resume interrupted downloads
                 )
                 self._pipeline_type = "t2v"
 
@@ -108,10 +114,10 @@ class VideoGenerator:
             else:
                 self._pipe = self._pipe.to("cuda")
 
-            if WAN_ENABLE_VAE_SLICING:
+            if WAN_ENABLE_VAE_SLICING and hasattr(self._pipe, 'enable_vae_slicing'):
                 self._pipe.enable_vae_slicing()
 
-            if WAN_ENABLE_VAE_TILING:
+            if WAN_ENABLE_VAE_TILING and hasattr(self._pipe, 'enable_vae_tiling'):
                 self._pipe.enable_vae_tiling()
 
             self._model_loaded = True

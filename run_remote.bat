@@ -2,12 +2,12 @@
 setlocal enabledelayedexpansion
 
 REM ============================================================================
-REM Local Mode - Run everything on this machine (requires local GPU)
+REM Remote Mode - Connect to a remote GPU server
 REM ============================================================================
 
 echo ===============================================================
-echo   WAN Video Generation - LOCAL MODE
-echo   (Runs on your local GPU)
+echo   WAN Video Generation - REMOTE MODE
+echo   (Connects to remote GPU server)
 echo ===============================================================
 echo.
 
@@ -26,16 +26,36 @@ if exist "%~dp0.env" (
     echo.
 )
 
-REM Force local mode
-set USE_REMOTE_GPU=false
+REM Allow command line override for GPU URL
+if not "%1"=="" (
+    set GPU_SERVICE_URL=%1
+)
+
+if "%GPU_SERVICE_URL%"=="" (
+    echo ERROR: GPU service URL not specified
+    echo.
+    echo Usage:
+    echo   run_remote.bat http://your-gpu-server:8001
+    echo.
+    echo Or set in .env file:
+    echo   GPU_SERVICE_URL=http://your-gpu-server:8001
+    exit /b 1
+)
+
+REM Force remote mode
+set USE_REMOTE_GPU=true
 set HOST=127.0.0.1
 set PORT=8000
 
 echo Configuration:
-echo   Mode:        LOCAL (using local GPU)
-echo   Model:       %WAN_MODEL_ID%
-echo   Resolution:  %WAN_WIDTH%x%WAN_HEIGHT%
-echo   Port:        %PORT%
+echo   Mode:        REMOTE (connecting to GPU server)
+echo   GPU Server:  %GPU_SERVICE_URL%
+echo   Local Port:  %PORT%
+if not "%GPU_API_KEY%"=="" (
+    echo   API Key:     [SET]
+) else (
+    echo   API Key:     [NOT SET]
+)
 echo.
 
 REM Activate virtual environment if it exists

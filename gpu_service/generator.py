@@ -112,11 +112,11 @@ class VideoGenerator:
             else:
                 self._pipe = self._pipe.to("cuda")
 
-            if WAN_ENABLE_VAE_SLICING:
+            if WAN_ENABLE_VAE_SLICING and hasattr(self._pipe, 'enable_vae_slicing'):
                 logger.info("Enabling VAE slicing")
                 self._pipe.enable_vae_slicing()
 
-            if WAN_ENABLE_VAE_TILING:
+            if WAN_ENABLE_VAE_TILING and hasattr(self._pipe, 'enable_vae_tiling'):
                 logger.info("Enabling VAE tiling")
                 self._pipe.enable_vae_tiling()
 
